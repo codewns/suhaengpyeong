@@ -113,6 +113,7 @@
   .send-btn:hover { background:#3d50e0; transform:scale(1.05); }
 
   .right-panel { width:400px; min-width:400px; background:#fff; border-left:1px solid var(--border); display:none; flex-direction:column; overflow:hidden; }
+  .right-panel.fullwidth { width:100%; min-width:unset; border-left:none; }
   .panel-header { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .panel-title { font-size:15px; font-weight:700; }
   .panel-content { flex:1; overflow-y:auto; padding:20px 24px; }
@@ -409,8 +410,8 @@ function showPreviousHistory(prev) {
       <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">🔄 새로 시작하기</button>
     </div>`;
   addAiMsg(html, true);
-  if(prev.resources) document.getElementById('resourceContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.resources).replace(/\n/g,'<br>')}</div>`;
-  if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.evaluation).replace(/\n/g,'<br>')}</div>`;
+  if(prev.resources) document.getElementById('resourceContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.resources)).replace(/\n/g,'<br>')}</div>`;
+  if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.evaluation)).replace(/\n/g,'<br>')}</div>`;
 }
 
 function resumeSession(subject, career, topic, topics) {
@@ -421,6 +422,8 @@ function resumeSession(subject, career, topic, topics) {
 
   if(topic) {
     updateStep(5);
+    // 주제 요약 패널 표시 (DB에서 세부내용 없으니 title만)
+    renderTopicSummary({ title: topic, details: {} });
     addAiMsg(`좋아요! <strong>${esc(topic)}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
     if(!document.querySelector('.submission-textarea')) showEvalInput();
   } else if(topics) {
@@ -1135,13 +1138,24 @@ async function apiFetch(url, options={}, timeoutMs=120000) {
 
 function switchTab(tab) {
   document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', ['chat','resources','eval'][i]===tab));
-  document.getElementById('panelChat').style.display = tab==='chat' ? 'flex' : 'none';
-  const rightPanel = document.querySelector('.right-panel');
   const hasTopic = !!selectedTopic;
-  rightPanel.style.display = (tab!=='chat' || hasTopic) ? 'flex' : 'none';
-  document.getElementById('panelTopicSummary').style.display = tab==='chat' && hasTopic ? 'flex' : 'none';
-  document.getElementById('panelResources').style.display = tab==='resources' ? 'flex' : 'none';
-  document.getElementById('panelEval').style.display = tab==='eval' ? 'flex' : 'none';
+  const rightPanel = document.querySelector('.right-panel');
+
+  if(tab === 'chat') {
+    document.getElementById('panelChat').style.display = 'flex';
+    document.getElementById('panelTopicSummary').style.display = hasTopic ? 'flex' : 'none';
+    document.getElementById('panelResources').style.display = 'none';
+    document.getElementById('panelEval').style.display = 'none';
+    rightPanel.classList.remove('fullwidth');
+    rightPanel.style.display = hasTopic ? 'flex' : 'none';
+  } else {
+    document.getElementById('panelChat').style.display = 'none';
+    document.getElementById('panelTopicSummary').style.display = 'none';
+    document.getElementById('panelResources').style.display = tab==='resources' ? 'flex' : 'none';
+    document.getElementById('panelEval').style.display = tab==='eval' ? 'flex' : 'none';
+    rightPanel.classList.add('fullwidth');
+    rightPanel.style.display = 'flex';
+  }
 }
 
 function updateStep(step) {
