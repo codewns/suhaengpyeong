@@ -279,6 +279,21 @@
 <!-- 이미지 평가용 인풋 -->
 <input type="file" id="evalImageInput" style="display:none" accept="image/*" onchange="evaluateImage(event)">
 
+<!-- 주제 상세 모달 -->
+<div class="modal-overlay" id="topicModal" onclick="if(event.target===this)closeTopicModal()">
+  <div class="modal" style="width:580px;">
+    <div class="modal-header">
+      <span class="modal-title" id="topicModalTitle"></span>
+      <button class="modal-close" onclick="closeTopicModal()">✕</button>
+    </div>
+    <div class="modal-body" id="topicModalBody"></div>
+    <div style="padding:16px 24px;border-top:1px solid var(--border);display:flex;gap:10px;">
+      <button onclick="closeTopicModal()" style="flex:1;padding:12px;border:1px solid var(--border);border-radius:10px;background:#fff;font-size:14px;font-family:'Noto Sans KR',sans-serif;cursor:pointer;">다른 주제 보기</button>
+      <button id="topicModalConfirm" style="flex:2;padding:12px;background:var(--primary);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;font-family:'Noto Sans KR',sans-serif;cursor:pointer;">✅ 이 주제로 확정하기</button>
+    </div>
+  </div>
+</div>
+
 <!-- 로그인 화면 -->
 <div id="loginOverlay" style="
   position:fixed;inset:0;background:var(--sidebar);
@@ -555,7 +570,7 @@ async function uploadAllImages() {
     if(uploadWrap) uploadWrap.remove();
     pendingImages = [];
 
-    addAiMsg(`✅ <strong>안내문 분석 완료!</strong><br><br>${esc(combinedResult).replace(/\n/g,'<br>')}<br><br>이제 주제를 추천해드릴게요!`, true);
+    addAiMsg(`✅ <strong>안내문 분석 완료!</strong> 이제 주제를 추천해드릴게요!`, true);
     await requestTopics();
   } catch(e) {
     removeLoading();
@@ -740,59 +755,125 @@ async function submitSkipForm() {
 }
 
 // ───────────────────────────────────────
-// 주제 카드
+// 주제 카드 (모달 포함)
 // ───────────────────────────────────────
-function showTopicCards(text) {
-  const lines = text.split('\n');
-  const topics = [];
-  let cur = null;
-  for(const line of lines) {
-    if(line.match(/^추천\s*\d+[:：]?\s*/)) {
-      if(cur) topics.push(cur);
-      cur = { title: line.replace(/^추천\s*\d+[:：]?\s*/,'').trim(), desc:'' };
-    } else if(cur && line.trim()) {
-      cur.desc += line.trim() + ' ';
-    }
-  }
-  if(cur) topics.push(cur);
-  if(topics.length === 0) topics.push({ title:'AI 추천 주제', desc: text });
+let topicDataStore = []; // 전체 주제 데이터 저장
 
-  const cardsHtml = topics.slice(0,3).map((t,i) => `
-    <div class="recommend-card" onclick="selectTopic(this,'${esc(t.title).replace(/'/g,"\\'")}')">
+function parseTopics(text) {
+  const topics = [];
+  // 추천 N: 또는 추천 N. 으로 시작하는 블록 분리
+  const blocks = text.split(/(?=추천\s*\d+\s*[:：.])/);
+  for(const block of blocks) {
+    const titleMatch = block.match(/추천\s*\d+\s*[:：.]\s*(.+)/);
+    if(!titleMatch) continue;
+    // 대괄호 제거, 앞뒤 공백 제거
+    const title = titleMatch[1].replace(/[\[\]]/g,'').trim();
+    if(!title) continue;
+
+    // 세부 내용 수집
+    const lines = block.split('\n').slice(1);
+    const details = {};
+    let curKey = '';
+    for(const line of lines) {
+      const keyMatch = line.match(/^[-•]\s*(.+?)[:：]\s*(.*)/);
+      if(keyMatch) {
+        curKey = keyMatch[1].trim();
+        details[curKey] = keyMatch[2].trim();
+      } else if(curKey && line.trim()) {
+        details[curKey] += ' ' + line.trim();
+      }
+    }
+    topics.push({ title, details, raw: block });
+  }
+  return topics;
+}
+
+function showTopicCards(text) {
+  topicDataStore = parseTopics(text);
+
+  // 파싱 실패 시 전체 텍스트를 하나의 주제로
+  if(topicDataStore.length === 0) {
+    topicDataStore = [{ title: text.split('\n')[0].replace(/추천\s*\d+\s*[:：.]\s*/,'').replace(/[\[\]]/g,'').trim() || '추천 주제', details:{}, raw: text }];
+  }
+
+  const cardsHtml = topicDataStore.map((t,i) => `
+    <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})">
       <div class="card-num">추천 ${i+1}</div>
       <div class="card-title">${esc(t.title)}</div>
-      <div class="card-desc">${esc((t.desc||'').slice(0,100))}${(t.desc||'').length>100?'...':''}</div>
+      <div class="card-desc" style="font-size:12px;color:var(--text-sub);margin-top:4px;">클릭해서 자세히 보기 →</div>
     </div>`).join('');
 
-  addAiMsg(`주제를 골라주세요! 마음에 드는 것을 클릭하세요 🎯<br><br>
+  addAiMsg(`주제를 골라주세요! 카드를 클릭하면 자세한 내용을 볼 수 있어요 🎯<br><br>
     <div class="recommend-cards">${cardsHtml}</div>
     <div class="quick-btns"><button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button></div>`, true, true);
 }
 
-async function selectTopic(el, topic) {
-  document.querySelectorAll('.recommend-card').forEach(c=>c.classList.remove('selected'));
-  el.classList.add('selected');
-  selectedTopic = topic;
-  addUserMsg(`"${topic}" 으로 할게요!`);
+function openTopicModal(idx) {
+  const t = topicDataStore[idx];
+  if(!t) return;
+
+  const detailRows = Object.entries(t.details).map(([k,v]) =>
+    `<div style="margin-bottom:12px;">
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(k)}</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(v)}</div>
+    </div>`
+  ).join('');
+
+  const rawFallback = detailRows || `<div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(t.raw).replace(/\n/g,'<br>')}</div>`;
+
+  document.getElementById('topicModalTitle').textContent = t.title;
+  document.getElementById('topicModalBody').innerHTML = rawFallback;
+  document.getElementById('topicModalConfirm').onclick = () => {
+    closeTopicModal();
+    confirmTopic(idx);
+  };
+  document.getElementById('topicModal').classList.add('show');
+}
+
+function closeTopicModal() {
+  document.getElementById('topicModal').classList.remove('show');
+}
+
+async function confirmTopic(idx) {
+  const t = topicDataStore[idx];
+  if(!t) return;
+
+  // 모든 카드 클릭 비활성화
+  document.querySelectorAll('.recommend-card').forEach(c => {
+    c.onclick = null;
+    c.style.cursor = 'default';
+    c.style.opacity = '0.5';
+  });
+  const card = document.getElementById(`topicCard${idx}`);
+  if(card) {
+    card.classList.add('selected');
+    card.style.opacity = '1';
+    card.style.border = '2px solid var(--primary)';
+  }
+  selectedTopic = t.title;
+
+  addUserMsg(`"${t.title}" 으로 확정할게요!`);
   addLoading();
   switchTab('resources');
   try {
     const res = await apiFetch(`${API}/find-resources`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id:sessionId, selected_topic:topic })
+      body: JSON.stringify({ session_id:sessionId, selected_topic:t.title })
     });
     const data = await res.json();
     removeLoading();
     updateStep(5);
     addAiMsg(`좋아요! 🌟 관련 자료를 오른쪽 <strong>맞춤 자료 탭</strong>에서 확인하세요!`, true, true);
-    renderResources(data.resources, topic);
-    showEvalInput();
+    renderResources(data.resources, t.title);
+    // 평가 입력창이 아직 없을 때만 추가
+    if(!document.querySelector('.submission-textarea')) showEvalInput();
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${e.message || '자료 검색 중 오류가 발생했어요.'}`);
   }
 }
+
 
 function renderResources(text, topic) {
   const blocks = text.split(/\n(?=\[자료\s*\d+\])/);
@@ -820,16 +901,17 @@ function renderResources(text, topic) {
 }
 
 function showEvalInput() {
+  const uid = Date.now(); // 고유 ID로 중복 방지
   addAiMsg(`완성본이 준비되면 평가받으세요! 📋<br>
     <div class="eval-type-tabs">
-      <button class="eval-type-tab active" id="evalTabText" onclick="switchEvalType('text')">📝 텍스트로 평가</button>
-      <button class="eval-type-tab" id="evalTabImg" onclick="switchEvalType('image')">📷 이미지로 평가</button>
+      <button class="eval-type-tab active" id="evalTabText_${uid}" onclick="switchEvalType('text','${uid}')">📝 텍스트로 평가</button>
+      <button class="eval-type-tab" id="evalTabImg_${uid}" onclick="switchEvalType('image','${uid}')">📷 이미지로 평가</button>
     </div>
-    <div id="evalTextArea">
-      <textarea class="submit-textarea" id="submissionText" placeholder="완성된 수행평가 내용을 여기에 붙여넣으세요..."></textarea>
-      <div style="margin-top:10px;"><button class="btn-primary" onclick="evaluateSubmission()">📊 평가받기</button></div>
+    <div id="evalTextArea_${uid}">
+      <textarea class="submit-textarea submission-textarea" placeholder="완성된 수행평가 내용을 여기에 붙여넣으세요..."></textarea>
+      <div style="margin-top:10px;"><button class="btn-primary" onclick="evaluateSubmission('${uid}')">📊 평가받기</button></div>
     </div>
-    <div id="evalImageArea" style="display:none;">
+    <div id="evalImageArea_${uid}" style="display:none;">
       <div class="eval-upload-area" onclick="document.getElementById('evalImageInput').click()">
         <div style="font-size:28px;margin-bottom:6px;">📷</div>
         <div style="font-size:14px;font-weight:500;">완성본 사진 업로드</div>
@@ -838,15 +920,17 @@ function showEvalInput() {
     </div>`, true);
 }
 
-function switchEvalType(type) {
-  document.getElementById('evalTabText').classList.toggle('active', type==='text');
-  document.getElementById('evalTabImg').classList.toggle('active', type==='image');
-  document.getElementById('evalTextArea').style.display = type==='text' ? 'block' : 'none';
-  document.getElementById('evalImageArea').style.display = type==='image' ? 'block' : 'none';
+function switchEvalType(type, uid) {
+  document.getElementById(`evalTabText_${uid}`).classList.toggle('active', type==='text');
+  document.getElementById(`evalTabImg_${uid}`).classList.toggle('active', type==='image');
+  document.getElementById(`evalTextArea_${uid}`).style.display = type==='text' ? 'block' : 'none';
+  document.getElementById(`evalImageArea_${uid}`).style.display = type==='image' ? 'block' : 'none';
 }
 
-async function evaluateSubmission() {
-  const text = document.getElementById('submissionText')?.value?.trim();
+async function evaluateSubmission(uid) {
+  // uid로 정확한 textarea 찾기
+  const area = document.getElementById(`evalTextArea_${uid}`);
+  const text = area ? area.querySelector('textarea')?.value?.trim() : null;
   if(!text) { showToast('평가할 내용을 입력해주세요!'); return; }
   addUserMsg(text.slice(0,80)+(text.length>80?'...':''));
   addLoading(); switchTab('eval');
