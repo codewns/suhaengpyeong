@@ -388,6 +388,7 @@ async function doLogin() {
     sessionId = data.session_id; studentName = data.name; studentCode = data.code;
     document.getElementById('headerBadge').textContent = data.name;
     document.getElementById('loginOverlay').style.display = 'none';
+    updateCallUsage(data.call_count || 0, data.call_limit || 0);
     if(data.previous && (data.previous.topics || data.previous.resources || data.previous.evaluation)) {
       showPreviousHistory(data.previous);
     } else {
@@ -419,10 +420,17 @@ function showPreviousHistory(prev) {
 function resumeFromPrev() {
   if(!prevSessionData) return;
   const p = prevSessionData;
-  resumeSession(p.subject||'', p.career||'', p.selected_topic||'', p.topics||'');
+  // topics 텍스트에서 선택한 주제의 세부내용 파싱
+  let topicObj = { title: p.selected_topic || '', details: {} };
+  if(p.topics && p.selected_topic) {
+    const parsed = parseTopics(p.topics);
+    const match = parsed.find(t => t.title && t.title.includes(p.selected_topic.slice(0,10)));
+    if(match) topicObj = match;
+  }
+  resumeSession(p.subject||'', p.career||'', p.selected_topic||'', p.topics||'', topicObj);
 }
 
-function resumeSession(subject, career, topic, topics) {
+function resumeSession(subject, career, topic, topics, topicObj) {
   studentInfo = { subject, career, prevTopic: '' };
   selectedTopic = topic || null;
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
@@ -438,7 +446,7 @@ function resumeSession(subject, career, topic, topics) {
 
   if(topic) {
     updateStep(5);
-    renderTopicSummary({ title: topic, details: {} });
+    renderTopicSummary(topicObj || { title: topic, details: {} });
     addAiMsg(`좋아요! <strong>${esc(topic)}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
     if(!document.querySelector('.submission-textarea')) showEvalInput();
   } else if(topics) {
