@@ -766,8 +766,8 @@ function parseTopics(text) {
   for(const block of blocks) {
     const titleMatch = block.match(/추천\s*\d+\s*[:：.]\s*(.+)/);
     if(!titleMatch) continue;
-    // 대괄호 제거, 앞뒤 공백 제거
-    const title = titleMatch[1].replace(/[\[\]]/g,'').trim();
+    // 마크다운 기호 및 대괄호 제거
+    const title = titleMatch[1].replace(/[\[\]\*\#`]/g,'').trim();
     if(!title) continue;
 
     // 세부 내용 수집
@@ -984,6 +984,26 @@ async function sendMessage() {
   if(!text) return;
   input.value = ''; autoResize(input);
   addUserMsg(text);
+
+  // 긍정 반응 키워드
+  const positiveKeywords = ['좋다','좋아','맘에','마음에','완벽','최고','굿','good','ㅋㅋ','ㅎㅎ','감사','고마','잘됐','잘 됐','선택','확정','이걸로'];
+  // 방법 질문 키워드
+  const howKeywords = ['어떻게','어떻게 써','어떻게 쓰','방법','작성','써야','쓰면','시작','뭐부터','모르겠','막막','도움'];
+
+  const lower = text.toLowerCase();
+  const isPositive = positiveKeywords.some(k => lower.includes(k));
+  const isHow = howKeywords.some(k => lower.includes(k));
+
+  if(isPositive && !isHow) {
+    addAiMsg('감사해요! 선택하신 주제로 최선을 다해 작성해보세요 😊');
+    return;
+  }
+  if(isHow) {
+    addAiMsg('위에서 추천드린 자료들을 참고해서 본인의 언어로 작성해보세요!');
+    return;
+  }
+
+  // 그 외엔 AI 호출
   addLoading();
   try {
     const res = await apiFetch(`${API}/recommend-topics`, {
@@ -996,7 +1016,7 @@ async function sendMessage() {
     addAiMsg(esc(data.topics).replace(/\n/g,'<br>'), true);
   } catch(e) {
     removeLoading();
-    addAiMsg(`❌ ${e.message || '죄송해요, 잠시 후 다시 시도해주세요.'}`);
+    addAiMsg('죄송해요, 잠시 후 다시 시도해주세요.');
   }
 }
 
