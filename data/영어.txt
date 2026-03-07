@@ -1,1 +1,85 @@
+[과목: 영어 - 고2/3 대상]
+
+=== 성취기준 및 평가요소 ===
+
+[영어/영어독해와작문]
+- 다양한 주제의 영어 글을 읽고 핵심 내용을 파악한다
+- 목적과 상황에 맞게 영어로 글을 쓴다
+- 영어로 자신의 의견을 논리적으로 표현한다
+- 영미 문화와 다양한 문화권을 이해하고 비교한다
+
+[영어권 문화/심화영어]
+- 영어 원서나 영어 텍스트를 읽고 분석한다
+- 영어로 발표 및 토론을 수행한다
+
+=== 수행평가 유형별 평가요소 ===
+
+[영어 에세이/보고서]
+- 주제 이해 및 논지 명확성 (25점)
+- 영어 표현의 정확성 및 다양성 (25점)
+- 근거의 타당성 및 내용 충실성 (25점)
+- 글의 구성 및 완성도 (25점)
+
+[영어 독서 보고서]
+- 내용 이해 및 요약 (30점)
+- 비판적 분석 및 자신의 의견 (30점)
+- 진로 연계 및 삶과의 연결 (20점)
+- 영어 표현 능력 (20점)
+
+[영어 발표/프레젠테이션]
+- 내용의 완성도 (30점)
+- 발음 및 표현 유창성 (25점)
+- 시각 자료 활용 (20점)
+- 질의응답 대처 (25점)
+
+=== 진로별 우수 주제 사례 ===
+
+[진로: 의학/바이오]
+- "The Ethics of Gene Editing - CRISPR Technology and Human Future"
+- "Mental Health Crisis in Teenagers - Causes and Solutions"
+- "Antibiotic Resistance: A Growing Global Health Threat"
+
+[진로: 환경/공학]
+- "Climate Change and Youth Activism - Greta Thunberg's Impact"
+- "Sustainable Energy Solutions for Korea's Future"
+- "Plastic Pollution and Ocean Ecosystem"
+
+[진로: IT/AI]
+- "Artificial Intelligence: Opportunities and Ethical Challenges"
+- "Social Media's Impact on Adolescent Mental Health"
+- "The Digital Divide - Technology Inequality in the 21st Century"
+
+[진로: 국제관계/외교]
+- "Globalization and Cultural Identity - Finding Balance"
+- "The Role of Youth in Global Climate Policy"
+- "Human Rights Issues in the Modern World"
+
+[진로: 경영/경제]
+- "The Gig Economy - Future of Work or Exploitation?"
+- "Fast Fashion Industry and Environmental Responsibility"
+- "Social Entrepreneurship - Business with Purpose"
+
+[진로: 교육/심리]
+- "Bilingual Education - Benefits and Challenges"
+- "The Psychology of Language Learning"
+- "Cross-cultural Communication in the Classroom"
+
+[진로: 예술/미디어]
+- "K-pop's Global Influence - Cultural Soft Power"
+- "Representation in Hollywood - Progress and Challenges"
+- "The Future of Journalism in the Digital Age"
+
+=== 추천 참고 자료 ===
+
+[영어 도서/원서]
+- The Alchemist (Paulo Coelho) - 진로/자기계발
+- Animal Farm (George Orwell) - 정치/사회 비판
+- The Old Man and the Sea (Hemingway) - 인내/성장
+- To Kill a Mockingbird (Harper Lee) - 인권/정의
+- Brave New World (Aldous Huxley) - 과학/윤리
+
+[비문학 영어 자료]
+- TED Talks 스크립트 - 다양한 주제 영어 에세이 작성 참고
+- TIME/National Geographic 기사 - 시사 주제 참고
+- Scientific American - 과학 진로 연계
 
