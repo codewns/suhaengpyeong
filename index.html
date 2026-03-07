@@ -22,7 +22,6 @@
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:'Noto Sans KR',sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; overflow:hidden; }
 
-  /* 사이드바 */
   .sidebar { width:220px; min-width:220px; background:var(--sidebar); display:flex; flex-direction:column; padding:24px 0; }
   .sidebar-logo { padding:0 20px 20px; border-bottom:1px solid rgba(255,255,255,0.08); margin-bottom:12px; }
   .sidebar-logo h1 { font-size:14px; font-weight:700; color:#fff; }
@@ -38,7 +37,6 @@
   .step-item.done .step-dot { background:#22c55e; border-color:#22c55e; color:#fff; }
   .step-item.current .step-dot { background:var(--primary); border-color:var(--primary); color:#fff; }
 
-  /* 헤더 */
   .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
   .header { background:#fff; border-bottom:1px solid var(--border); padding:0 24px; height:56px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .header-left { display:flex; align-items:center; gap:12px; }
@@ -48,10 +46,8 @@
   .header-tab { padding:7px 18px; font-size:13px; cursor:pointer; border:none; background:transparent; color:var(--text-sub); font-weight:500; font-family:'Noto Sans KR',sans-serif; transition:all 0.2s; }
   .header-tab.active { background:var(--primary); color:#fff; }
 
-  /* 컨텐츠 */
   .content { flex:1; display:flex; overflow:hidden; }
 
-  /* 채팅 */
   .chat-panel { flex:1; display:flex; flex-direction:column; background:#fff; border-right:1px solid var(--border); overflow:hidden; }
   .chat-messages { flex:1; overflow-y:auto; padding:24px; display:flex; flex-direction:column; gap:20px; }
   .chat-messages::-webkit-scrollbar { width:4px; }
@@ -67,7 +63,6 @@
   .msg-user { display:flex; justify-content:flex-end; animation:fadeUp 0.3s ease; }
   .user-bubble { background:var(--primary); color:#fff; border-radius:16px 4px 16px 16px; padding:12px 18px; font-size:14px; line-height:1.6; max-width:460px; }
 
-  /* 카드들 */
   .recommend-cards { display:flex; flex-direction:column; gap:10px; margin-top:12px; }
   .recommend-card { background:#fff; border:1px solid var(--border); border-radius:12px; padding:14px 16px; cursor:pointer; transition:all 0.2s; }
   .recommend-card:hover { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); transform:translateY(-1px); }
@@ -76,31 +71,40 @@
   .card-title { font-size:14px; font-weight:600; margin-bottom:4px; }
   .card-desc { font-size:12px; color:var(--text-sub); line-height:1.5; }
 
-  /* 버튼들 */
   .quick-btns { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
   .quick-btn { padding:8px 14px; border:1px solid var(--border); border-radius:20px; font-size:13px; cursor:pointer; background:#fff; color:var(--text); font-family:'Noto Sans KR',sans-serif; transition:all 0.2s; }
   .quick-btn:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
   .btn-primary { padding:11px 20px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all 0.2s; }
   .btn-primary:hover { background:#3d50e0; }
 
-  /* 업로드 */
+  /* 멀티 이미지 업로드 */
   .upload-area { border:2px dashed var(--border); border-radius:16px; padding:28px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafbff; margin-top:12px; }
   .upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
   .upload-icon { font-size:32px; margin-bottom:8px; }
   .upload-text { font-size:14px; font-weight:500; }
   .upload-sub { font-size:12px; color:var(--text-sub); margin-top:4px; }
 
-  /* 폼 */
+  .image-preview-grid { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .image-thumb-wrap { position:relative; width:80px; height:80px; border-radius:10px; overflow:hidden; border:2px solid var(--border); }
+  .image-thumb-wrap img { width:100%; height:100%; object-fit:cover; }
+  .image-thumb-remove { position:absolute; top:2px; right:2px; width:20px; height:20px; border-radius:50%; background:rgba(0,0,0,0.6); color:#fff; border:none; cursor:pointer; font-size:11px; display:flex; align-items:center; justify-content:center; }
+  .image-add-btn { width:80px; height:80px; border-radius:10px; border:2px dashed var(--border); display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; font-size:22px; color:var(--text-sub); transition:all 0.2s; background:#fafbff; }
+  .image-add-btn:hover { border-color:var(--primary); color:var(--primary); background:var(--primary-light); }
+  .upload-confirm-btn { margin-top:12px; padding:11px 24px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all 0.2s; width:100%; }
+  .upload-confirm-btn:hover { background:#3d50e0; }
+  .upload-confirm-btn:disabled { background:#c4c9e8; cursor:not-allowed; }
+
   .info-form { background:#fff; border:1px solid var(--border); border-radius:14px; padding:18px; margin-top:12px; display:flex; flex-direction:column; gap:12px; }
   .form-row { display:flex; gap:10px; }
   .form-group { flex:1; display:flex; flex-direction:column; gap:6px; }
   .form-label { font-size:12px; font-weight:600; color:var(--text-sub); }
   .form-input, .form-select { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); outline:none; transition:border-color 0.2s; background:#fff; }
   .form-input:focus, .form-select:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
+  .form-textarea { padding:10px 14px; border:1px solid var(--border); border-radius:10px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); outline:none; transition:border-color 0.2s; background:#fff; resize:vertical; min-height:80px; line-height:1.6; }
+  .form-textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
   .form-submit { padding:12px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:14px; font-weight:600; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all 0.2s; }
   .form-submit:hover { background:#3d50e0; }
 
-  /* 입력창 */
   .chat-input-wrap { padding:16px 24px 20px; border-top:1px solid var(--border); flex-shrink:0; }
   .chat-input-box { display:flex; align-items:flex-end; gap:10px; background:#f7f8ff; border:1px solid var(--border); border-radius:16px; padding:10px 14px; transition:border-color 0.2s; }
   .chat-input-box:focus-within { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
@@ -108,7 +112,6 @@
   .send-btn { width:36px; height:36px; border-radius:10px; background:var(--primary); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.2s; }
   .send-btn:hover { background:#3d50e0; transform:scale(1.05); }
 
-  /* 오른쪽 패널 */
   .right-panel { width:400px; min-width:400px; background:#fff; display:flex; flex-direction:column; overflow:hidden; }
   .panel-header { padding:18px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
   .panel-title { font-size:15px; font-weight:700; }
@@ -116,49 +119,40 @@
   .panel-content::-webkit-scrollbar { width:4px; }
   .panel-content::-webkit-scrollbar-thumb { background:var(--border); border-radius:4px; }
 
-  /* 자료 카드 */
   .resource-card { border:1px solid var(--border); border-radius:14px; padding:18px; margin-bottom:14px; animation:fadeUp 0.3s ease; }
   .resource-title { font-size:14px; font-weight:700; margin-bottom:6px; }
   .resource-badge { display:inline-block; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:600; background:#dbeafe; color:#1d4ed8; margin-bottom:8px; }
   .resource-desc { font-size:13px; color:var(--text-sub); line-height:1.6; }
 
-  /* 평가 */
   .eval-section { margin-bottom:16px; padding:14px; border-radius:12px; border:1px solid var(--border); animation:fadeUp 0.3s ease; }
   .eval-text { font-size:13px; line-height:1.8; color:var(--text); white-space:pre-wrap; }
 
-  /* 로딩 */
   .loading-bubble { display:flex; gap:6px; align-items:center; padding:6px 0; }
   .loading-dot { width:8px; height:8px; border-radius:50%; background:var(--primary); opacity:0.4; animation:bounce 1.2s infinite; }
   .loading-dot:nth-child(2) { animation-delay:0.2s; }
   .loading-dot:nth-child(3) { animation-delay:0.4s; }
   @keyframes bounce { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-6px);opacity:1} }
 
-  /* 빈 상태 */
   .empty-state { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; gap:12px; color:var(--text-sub); text-align:center; padding:40px; }
   .empty-icon { font-size:48px; opacity:0.4; }
   .empty-title { font-size:15px; font-weight:600; }
   .empty-desc { font-size:13px; line-height:1.6; }
 
-  /* 제출 텍스트 */
   .submit-textarea { width:100%; min-height:140px; padding:14px; border:1px solid var(--border); border-radius:12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; color:var(--text); resize:vertical; outline:none; margin-top:10px; line-height:1.7; }
   .submit-textarea:focus { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
 
-  /* 메타 태그 */
   .meta-tags { display:flex; gap:8px; margin-top:8px; flex-wrap:wrap; }
   .meta-tag { padding:4px 12px; border-radius:20px; font-size:11px; font-weight:600; }
   .tag-subject { background:#ede9fe; color:#7c3aed; }
   .tag-grade { background:#dbeafe; color:#1d4ed8; }
   .tag-career { background:#fce7f3; color:#9d174d; }
 
-  /* 토스트 */
   .toast { position:fixed; bottom:24px; right:24px; background:#1a1f3c; color:#fff; padding:12px 20px; border-radius:12px; font-size:13px; font-weight:500; z-index:999; opacity:0; transform:translateY(10px); transition:all 0.3s; }
   .toast.show { opacity:1; transform:translateY(0); }
 
-  /* 서버 연결 배너 */
   .connecting-banner { background:#fef3c7; border-bottom:1px solid #fde68a; padding:10px 24px; font-size:13px; color:#92400e; text-align:center; display:none; }
   .connecting-banner.show { display:block; }
 
-  /* 스크랩 모달 */
   .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:100; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.2s; }
   .modal-overlay.show { opacity:1; pointer-events:all; }
   .modal { background:#fff; border-radius:20px; width:560px; max-width:90vw; max-height:80vh; display:flex; flex-direction:column; overflow:hidden; transform:translateY(16px); transition:transform 0.2s; }
@@ -175,11 +169,9 @@
   .scrap-delete { position:absolute; top:12px; right:12px; width:24px; height:24px; border-radius:6px; border:none; background:#fee2e2; color:#dc2626; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
   .scrap-empty { text-align:center; padding:40px 20px; color:var(--text-sub); font-size:14px; }
 
-  /* 이미지 평가 업로드 */
   .eval-upload-area { border:2px dashed var(--border); border-radius:12px; padding:20px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafbff; margin-top:8px; }
   .eval-upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
 
-  /* 평가 탭 선택 */
   .eval-type-tabs { display:flex; gap:8px; margin-top:10px; }
   .eval-type-tab { flex:1; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:13px; cursor:pointer; background:#fff; color:var(--text-sub); font-family:'Noto Sans KR',sans-serif; font-weight:500; transition:all 0.2s; text-align:center; }
   .eval-type-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
@@ -187,7 +179,6 @@
 </head>
 <body>
 
-<!-- 사이드바 -->
 <aside class="sidebar">
   <div class="sidebar-logo">
     <h1>📚 수행평가 AI 코치</h1>
@@ -205,20 +196,19 @@
   </div>
   <div class="sidebar-bottom">
     <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px;">진행 단계</div>
-    <div class="step-item current" id="step1"><div class="step-dot">1</div><span>안내문 업로드</span></div>
-    <div class="step-item" id="step2"><div class="step-dot">2</div><span>주제 추천</span></div>
-    <div class="step-item" id="step3"><div class="step-dot">3</div><span>자료 검색</span></div>
-    <div class="step-item" id="step4"><div class="step-dot">4</div><span>완성본 평가</span></div>
+    <div class="step-item current" id="step1"><div class="step-dot">1</div><span>과목 입력</span></div>
+    <div class="step-item" id="step2"><div class="step-dot">2</div><span>안내문 업로드</span></div>
+    <div class="step-item" id="step3"><div class="step-dot">3</div><span>주제 추천</span></div>
+    <div class="step-item" id="step4"><div class="step-dot">4</div><span>자료 검색</span></div>
+    <div class="step-item" id="step5"><div class="step-dot">5</div><span>완성본 평가</span></div>
   </div>
 </aside>
 
-<!-- 메인 -->
 <div class="main">
   <div class="connecting-banner" id="connectingBanner">
     ⏳ 서버 시작 중... 처음 접속 시 최대 1분 소요될 수 있어요. 잠시만 기다려주세요!
   </div>
 
-  <!-- 헤더 -->
   <header class="header">
     <div class="header-left">
       <span class="header-subject" id="headerTitle">수행평가 AI 코치</span>
@@ -232,33 +222,8 @@
   </header>
 
   <div class="content">
-    <!-- 채팅 패널 -->
     <div class="chat-panel">
-      <div class="chat-messages" id="chatMessages">
-        <div class="msg-ai">
-          <div class="ai-avatar">🤖</div>
-          <div>
-            <div class="ai-name">AI 수행평가 코치</div>
-            <div class="ai-bubble">
-              안녕하세요! 저는 <strong>수행평가 AI 코치</strong>예요 👋<br><br>
-              수행평가 안내문을 업로드하시면 분석해드리고,<br>
-              <strong>주제 추천 → 자료 검색 → 완성본 평가</strong>까지<br>
-              단계별로 도와드릴게요!<br><br>
-              먼저 수행평가 안내문 사진을 올려주세요 📄
-            </div>
-            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-              <div class="upload-icon">📎</div>
-              <div class="upload-text">안내문 이미지 업로드</div>
-              <div class="upload-sub">PNG, JPG 파일 · 클릭하거나 드래그하세요</div>
-            </div>
-            <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadAssessment(event)">
-            <div class="quick-btns">
-              <button class="quick-btn" onclick="skipToForm()">📝 안내문 없이 시작하기</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
+      <div class="chat-messages" id="chatMessages"></div>
       <div class="chat-input-wrap">
         <div class="chat-input-box">
           <textarea class="chat-input" id="chatInput" rows="1"
@@ -273,7 +238,6 @@
       </div>
     </div>
 
-    <!-- 오른쪽 패널 -->
     <div class="right-panel">
       <div id="panelResources" style="display:flex;flex-direction:column;height:100%">
         <div class="panel-header"><span class="panel-title">📖 맞춤 자료</span></div>
@@ -308,13 +272,11 @@
       <span class="modal-title">📌 나의 스크랩</span>
       <button class="modal-close" onclick="closeScrapModalBtn()">✕</button>
     </div>
-    <div class="modal-body" id="scrapModalBody">
-      <div class="scrap-empty">아직 스크랩한 내용이 없어요<br><br>채팅에서 AI 답변 옆 📌 버튼을 눌러<br>중요한 내용을 저장해보세요!</div>
-    </div>
+    <div class="modal-body" id="scrapModalBody"></div>
   </div>
 </div>
 
-<!-- 이미지 평가용 파일 인풋 -->
+<!-- 이미지 평가용 인풋 -->
 <input type="file" id="evalImageInput" style="display:none" accept="image/*" onchange="evaluateImage(event)">
 
 <!-- 로그인 화면 -->
@@ -332,7 +294,6 @@
       <h2 style="font-size:20px;font-weight:800;color:var(--text);">수행평가 AI 코치</h2>
       <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">선생님께 받은 코드와 이름을 입력하세요</p>
     </div>
-
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div>
         <label style="font-size:12px;font-weight:600;color:var(--text-sub);display:block;margin-bottom:6px;">이름</label>
@@ -358,8 +319,6 @@
 </div>
 
 <script>
-// ★ Render 배포 후 아래 주소를 본인 Render 주소로 바꾸세요 ★
-// 예: 'https://suhaengpyeong-backend.onrender.com'
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8000'
   : 'https://suhaengpyeong.onrender.com';
@@ -371,6 +330,9 @@ let assessmentInfo = null;
 let studentName = null;
 let studentCode = null;
 
+// 멀티 이미지 관리
+let pendingImages = []; // { file, dataUrl }
+
 // ───────────────────────────────────────
 // 로그인
 // ───────────────────────────────────────
@@ -378,328 +340,254 @@ async function doLogin() {
   const name = document.getElementById('loginName').value.trim();
   const code = document.getElementById('loginCode').value.trim().toUpperCase();
   const errEl = document.getElementById('loginError');
-
-  if(!name || !code) {
-    errEl.textContent = '이름과 코드를 모두 입력해주세요.';
-    errEl.style.display = 'block';
-    return;
-  }
-
-  errEl.style.display = 'none';
+  if(!name || !code) { errEl.textContent='이름과 코드를 모두 입력해주세요.'; errEl.style.display='block'; return; }
+  errEl.style.display='none';
   const btn = document.querySelector('#loginOverlay button');
-  btn.textContent = '확인 중...';
-  btn.disabled = true;
-
+  btn.textContent='확인 중...'; btn.disabled=true;
   try {
-    const res = await fetch(`${API}/login`, {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ name, code })
-    });
+    const res = await fetch(`${API}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,code}) });
     const data = await res.json();
-
-    if(!res.ok) {
-      errEl.textContent = data.detail || '로그인 실패';
-      errEl.style.display = 'block';
-      btn.textContent = '시작하기 →';
-      btn.disabled = false;
-      return;
-    }
-
-    // 로그인 성공
-    sessionId = data.session_id;
-    studentName = data.name;
-    studentCode = data.code;
-
+    if(!res.ok) { errEl.textContent=data.detail||'로그인 실패'; errEl.style.display='block'; btn.textContent='시작하기 →'; btn.disabled=false; return; }
+    sessionId = data.session_id; studentName = data.name; studentCode = data.code;
     document.getElementById('headerBadge').textContent = data.name;
     document.getElementById('loginOverlay').style.display = 'none';
-
-    // 이전 대화 있으면 불러오기
     if(data.previous && (data.previous.topics || data.previous.resources || data.previous.evaluation)) {
       showPreviousHistory(data.previous);
     } else {
       showWelcome(data.name);
     }
-
   } catch(e) {
-    errEl.textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
-    errEl.style.display = 'block';
-    btn.textContent = '시작하기 →';
-    btn.disabled = false;
+    errEl.textContent='서버 연결 실패. 잠시 후 다시 시도해주세요.'; errEl.style.display='block';
+    btn.textContent='시작하기 →'; btn.disabled=false;
   }
 }
 
-// 이전 대화 불러오기
 function showPreviousHistory(prev) {
   addAiMsg(`반갑습니다, <strong>${studentName}</strong>님! 👋<br><br>
     지난번 기록을 불러왔어요.<br>
     📅 마지막 접속: <strong>${prev.date}</strong><br>
-    📚 과목: <strong>${prev.subject || '-'}</strong> / 학년: <strong>${prev.grade || '-'}</strong><br>
-    🎯 선택 주제: <strong>${prev.topic || '-'}</strong><br><br>
+    📚 과목: <strong>${prev.subject||'-'}</strong><br>
+    🎯 선택 주제: <strong>${prev.topic||'-'}</strong><br><br>
     이어서 하시겠어요?`, true);
-
   const html = `
     <div class="quick-btns">
-      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.grade||'')}','${esc(prev.career||'')}','${esc(prev.topic||'')}')">
-        ▶ 이어서 하기
-      </button>
-      <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">
-        🔄 새로 시작하기
-      </button>
+      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.career||'')}','${esc(prev.topic||'')}')">▶ 이어서 하기</button>
+      <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">🔄 새로 시작하기</button>
     </div>`;
   addAiMsg(html, true);
-
-  // 이전 자료/평가 패널에 표시
-  if(prev.resources) {
-    document.getElementById('resourceContent').innerHTML = `
-      <div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div>
-      <div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.resources).replace(/\n/g,'<br>')}</div>`;
-  }
-  if(prev.evaluation) {
-    document.getElementById('evalContent').innerHTML = `
-      <div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div>
-      <div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.evaluation).replace(/\n/g,'<br>')}</div>`;
-  }
+  if(prev.resources) document.getElementById('resourceContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.resources).replace(/\n/g,'<br>')}</div>`;
+  if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.evaluation).replace(/\n/g,'<br>')}</div>`;
 }
 
-// 이어서 하기
-function resumeSession(subject, grade, career, topic) {
-  studentInfo = { subject, grade, career };
+function resumeSession(subject, career, topic) {
+  studentInfo = { subject, career };
   selectedTopic = topic;
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
-  updateStep(4);
+  updateStep(5);
   addAiMsg(`좋아요! <strong>${topic}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
   showEvalInput();
 }
 
-// 처음 환영 메시지
+// ───────────────────────────────────────
+// STEP 0: 환영 + 과목/이전주제 먼저 물어보기
+// ───────────────────────────────────────
 function showWelcome(name) {
   document.getElementById('chatMessages').innerHTML = '';
   addAiMsg(`안녕하세요, <strong>${name}</strong>님! 👋<br><br>
-    수행평가 안내문을 업로드하시면 분석해드리고,<br>
-    <strong>주제 추천 → 자료 검색 → 완성본 평가</strong>까지<br>
-    단계별로 도와드릴게요!<br><br>
-    먼저 수행평가 안내문 사진을 올려주세요 📄`, true);
+    수행평가를 도와드릴게요!<br>
+    먼저 <strong>과목</strong>과 <strong>같은 과목에서 이전에 했던 주제</strong>를 알려주세요 📝`, true);
+  showPreUploadForm();
+}
 
-  const uploadHtml = `
-    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-      <div class="upload-icon">📎</div>
-      <div class="upload-text">안내문 이미지 업로드</div>
-      <div class="upload-sub">PNG, JPG 파일 · 클릭하거나 드래그하세요</div>
-    </div>
-    <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadAssessment(event)">
-    <div class="quick-btns">
-      <button class="quick-btn" onclick="skipToForm()">📝 안내문 없이 시작하기</button>
-    </div>`;
-
+// STEP 0 폼: 과목 + 이전 주제 (이미지 업로드 전 필수)
+function showPreUploadForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
-  wrap.innerHTML = `<div class="ai-avatar">🤖</div><div><div class="ai-name">AI 수행평가 코치</div>${uploadHtml}</div>`;
-  document.getElementById('chatMessages').appendChild(wrap);
-  scrollBot();
-}
-
-// 초기화 (로그인 전 서버 연결 확인만)
-async function init() {
-  try {
-    await fetch(`${API}/`);
-  } catch(e) {
-    document.getElementById('connectingBanner').classList.add('show');
-    setTimeout(async () => {
-      try {
-        await fetch(`${API}/`);
-        document.getElementById('connectingBanner').classList.remove('show');
-      } catch(e2) {
-        document.getElementById('connectingBanner').textContent = '❌ 서버 연결 실패. 잠시 후 새로고침 해주세요.';
-      }
-    }, 30000);
-  }
-}
-
-// ───────────────────────────────────────
-// fetch 타임아웃 + 서버 깨우기 헬퍼
-// Render 무료 서버는 최대 60초 걸릴 수 있어서 타임아웃을 넉넉하게 설정
-// ───────────────────────────────────────
-async function apiFetch(url, options = {}, timeoutMs = 120000) {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-
-  // 로딩 메시지를 시간에 따라 업데이트
-  const loadingTips = [
-    null,
-    '⏳ AI가 열심히 분석 중이에요...',
-    '⏳ 조금만 더 기다려주세요...',
-    '⏳ 거의 다 됐어요! 잠시만요...',
-  ];
-  const tipTimers = loadingTips.map((tip, i) => {
-    if(!tip) return null;
-    return setTimeout(() => {
-      const el = document.querySelector('#loadingMsg .ai-bubble');
-      if(el) el.innerHTML = `<div style="font-size:13px;color:var(--text-sub);">${tip}</div>`;
-    }, i * 20000);
-  });
-
-  try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
-    clearTimeout(timer);
-    tipTimers.forEach(t => t && clearTimeout(t));
-    return res;
-  } catch(e) {
-    clearTimeout(timer);
-    tipTimers.forEach(t => t && clearTimeout(t));
-    if(e.name === 'AbortError') {
-      throw new Error('응답 시간이 너무 길어요. 서버가 재시작 중일 수 있어요. 잠시 후 다시 시도해주세요.');
-    }
-    throw e;
-  }
-}
-
-// 탭
-function switchTab(tab) {
-  document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', ['chat','resources','eval'][i]===tab));
-  document.getElementById('panelResources').style.display = tab==='resources' ? 'flex' : 'none';
-  document.getElementById('panelEval').style.display = tab==='eval' ? 'flex' : 'none';
-}
-
-// 단계
-function updateStep(step) {
-  for(let i=1;i<=4;i++) {
-    const el = document.getElementById(`step${i}`);
-    el.classList.remove('done','current');
-    if(i<step) { el.classList.add('done'); el.querySelector('.step-dot').textContent='✓'; }
-    else if(i===step) el.classList.add('current');
-  }
-}
-
-// 메시지
-function addAiMsg(html, isHTML=false, scrapable=false) {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-ai';
-  const content = isHTML ? html : esc(html).replace(/\n/g,'<br>');
-  wrap.innerHTML = `
-    <div class="ai-avatar">🤖</div>
-    <div>
-      <div class="ai-name">AI 수행평가 코치</div>
-      <div class="ai-bubble">${content}</div>
-    </div>`;
-  document.getElementById('chatMessages').appendChild(wrap);
-  if(scrapable) addScrapBtn(wrap, wrap.querySelector('.ai-bubble').innerText);
-  scrollBot();
-  return wrap;
-}
-
-function addUserMsg(text) {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-user';
-  wrap.innerHTML = `<div class="user-bubble">${esc(text).replace(/\n/g,'<br>')}</div>`;
-  document.getElementById('chatMessages').appendChild(wrap);
-  scrollBot();
-}
-
-function addLoading() {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-ai'; wrap.id = 'loadingMsg';
-  wrap.innerHTML = `
-    <div class="ai-avatar">🤖</div>
-    <div><div class="ai-name">AI 수행평가 코치</div>
-    <div class="ai-bubble"><div class="loading-bubble">
-      <div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div>
-    </div></div></div>`;
-  document.getElementById('chatMessages').appendChild(wrap);
-  scrollBot();
-}
-
-function removeLoading() { const e=document.getElementById('loadingMsg'); if(e) e.remove(); }
-function scrollBot() { const e=document.getElementById('chatMessages'); e.scrollTop=e.scrollHeight; }
-function esc(t) { return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-function showToast(msg) {
-  const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),3000);
-}
-
-// 1번: 안내문 업로드
-async function uploadAssessment(event) {
-  const file = event.target.files[0];
-  if(!file) return;
-  if(!sessionId) { showToast('서버 연결 중이에요. 잠시 후 다시 시도해주세요.'); return; }
-
-  addUserMsg(`📎 ${file.name}`);
-  addLoading();
-
-  const formData = new FormData();
-  formData.append('session_id', sessionId);
-  formData.append('image', file);
-
-  try {
-    const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
-    const data = await res.json();
-    removeLoading();
-    assessmentInfo = data.assessment_info;
-    updateStep(2);
-    addAiMsg(`✅ <strong>안내문 분석 완료!</strong><br><br>${esc(data.assessment_info).replace(/\n/g,'<br>')}<br><br>이제 학생 정보를 입력해주세요!`, true);
-    showStudentForm();
-  } catch(e) {
-    removeLoading();
-    addAiMsg(`❌ ${e.message || '분석 중 오류가 발생했어요. 다시 시도해주세요.'}`);
-  }
-}
-
-// 안내문 없이 시작
-function skipToForm() {
-  addUserMsg('안내문 없이 시작할게요');
-  updateStep(2);
-  addAiMsg('알겠어요! 학생 정보를 입력해주세요 😊', true);
-  showStudentForm();
-}
-
-// 학생 정보 폼
-function showStudentForm() {
-  const wrap = document.createElement('div');
-  wrap.className = 'msg-ai';
+  wrap.id = 'preUploadFormWrap';
   wrap.innerHTML = `
     <div class="ai-avatar">🤖</div>
     <div style="width:100%">
       <div class="ai-name">AI 수행평가 코치</div>
-      <div class="info-form" id="studentForm">
+      <div class="info-form" id="preUploadForm">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">학년</label>
-            <select class="form-select" id="gradeInput">
-              <option>고1</option><option selected>고2</option><option>고3</option>
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSubjectInput">
+              <option>국어</option><option>영어</option><option>수학</option>
+              <option>사회/역사</option><option>과학</option><option>기타</option>
             </select>
           </div>
           <div class="form-group">
-            <label class="form-label">과목</label>
-            <select class="form-select" id="subjectInput">
-              <option>국어</option><option>영어</option><option>수학</option>
-              <option>사회/역사</option><option>과학</option>
-            </select>
+            <label class="form-label">같은 과목에서 이전에 한 주제</label>
+            <input class="form-input" id="prePrevTopicInput" placeholder="예: 독서 감상문, 논설문 쓰기 등" />
           </div>
         </div>
-        <div class="form-group">
-          <label class="form-label">희망 진로</label>
-          <input class="form-input" id="careerInput" placeholder="예: 심리상담사, 의사, AI 개발자" />
-        </div>
-        <button class="form-submit" onclick="submitInfo()">✨ 주제 추천받기</button>
+        <button class="form-submit" onclick="submitPreForm()">다음 단계 →</button>
       </div>
     </div>`;
   document.getElementById('chatMessages').appendChild(wrap);
   scrollBot();
 }
 
-// 2번: 주제 추천
-async function submitInfo() {
-  const grade = document.getElementById('gradeInput').value;
-  const subject = document.getElementById('subjectInput').value;
-  const career = document.getElementById('careerInput').value.trim();
-  if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
+function submitPreForm() {
+  const subject = document.getElementById('preSubjectInput').value;
+  const prevTopic = document.getElementById('prePrevTopicInput').value.trim();
 
-  studentInfo = { grade, subject, career };
-  document.getElementById('studentForm').style.display = 'none';
+  // 과목은 필수
+  document.getElementById('preUploadForm').style.display = 'none';
+  updateStep(2);
+
+  studentInfo = { ...(studentInfo || {}), subject, prevTopic };
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+
+  addUserMsg(`과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''}`);
+  addAiMsg(`좋아요! 이제 <strong>수행평가 안내문 사진</strong>을 올려주세요 📄<br>
+    <span style="font-size:12px;color:var(--text-sub);">여러 장도 한번에 업로드할 수 있어요!</span>`, true);
+  showUploadArea();
+}
+
+// ───────────────────────────────────────
+// 멀티 이미지 업로드 UI
+// ───────────────────────────────────────
+function showUploadArea() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  wrap.id = 'uploadAreaWrap';
+  wrap.innerHTML = `
+    <div class="ai-avatar">🤖</div>
+    <div style="width:100%;max-width:520px;">
+      <div class="ai-name">AI 수행평가 코치</div>
+      <div id="imagePreviewGrid" class="image-preview-grid">
+        <div class="image-add-btn" onclick="document.getElementById('multiFileInput').click()">
+          <span>+</span>
+          <span style="font-size:10px;margin-top:2px;">사진 추가</span>
+        </div>
+      </div>
+      <input type="file" id="multiFileInput" style="display:none" accept="image/*" multiple onchange="addImages(event)">
+      <div style="font-size:12px;color:var(--text-sub);margin-top:8px;">PNG, JPG · 여러 장 선택 가능</div>
+      <button class="upload-confirm-btn" id="uploadConfirmBtn" onclick="uploadAllImages()" disabled>
+        📤 분석 시작하기
+      </button>
+      <div class="quick-btns" style="margin-top:10px;">
+        <button class="quick-btn" onclick="skipToFormFromUpload()">📝 안내문 없이 시작하기</button>
+      </div>
+    </div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+function addImages(event) {
+  const files = Array.from(event.target.files);
+  files.forEach(file => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      pendingImages.push({ file, dataUrl: e.target.result });
+      renderImagePreviews();
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function renderImagePreviews() {
+  const grid = document.getElementById('imagePreviewGrid');
+  if(!grid) return;
+  grid.innerHTML = '';
+  pendingImages.forEach((img, idx) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'image-thumb-wrap';
+    wrap.innerHTML = `
+      <img src="${img.dataUrl}" alt="미리보기">
+      <button class="image-thumb-remove" onclick="removeImage(${idx})">✕</button>`;
+    grid.appendChild(wrap);
+  });
+  // + 추가 버튼
+  const addBtn = document.createElement('div');
+  addBtn.className = 'image-add-btn';
+  addBtn.innerHTML = '<span>+</span><span style="font-size:10px;margin-top:2px;">추가</span>';
+  addBtn.onclick = () => document.getElementById('multiFileInput').click();
+  grid.appendChild(addBtn);
+
+  const confirmBtn = document.getElementById('uploadConfirmBtn');
+  if(confirmBtn) confirmBtn.disabled = pendingImages.length === 0;
+}
+
+function removeImage(idx) {
+  pendingImages.splice(idx, 1);
+  renderImagePreviews();
+}
+
+async function uploadAllImages() {
+  if(!pendingImages.length) { showToast('사진을 먼저 추가해주세요!'); return; }
+  if(!sessionId) { showToast('서버 연결 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+
+  // 업로드 UI 숨기기
+  const uploadWrap = document.getElementById('uploadAreaWrap');
+  if(uploadWrap) uploadWrap.style.opacity = '0.5';
+
+  // 이미지 목록을 사용자 메시지로
+  addUserMsg(`📎 안내문 사진 ${pendingImages.length}장 업로드`);
+  addLoading();
+  updateStep(3);
+
+  try {
+    // 각 이미지를 순차적으로 분석 후 결과 합산
+    let combinedResult = '';
+    for(let i = 0; i < pendingImages.length; i++) {
+      const formData = new FormData();
+      formData.append('session_id', sessionId);
+      formData.append('image', pendingImages[i].file);
+      const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
+      const data = await res.json();
+      combinedResult += (pendingImages.length > 1 ? `\n\n[사진 ${i+1}]\n` : '') + data.assessment_info;
+    }
+
+    removeLoading();
+    assessmentInfo = combinedResult;
+    if(uploadWrap) uploadWrap.remove();
+    pendingImages = [];
+
+    addAiMsg(`✅ <strong>안내문 분석 완료!</strong><br><br>${esc(combinedResult).replace(/\n/g,'<br>')}<br><br>이제 진로를 입력해주세요!`, true);
+    showCareerForm();
+  } catch(e) {
+    removeLoading();
+    if(uploadWrap) uploadWrap.style.opacity = '1';
+    addAiMsg(`❌ ${e.message || '분석 중 오류가 발생했어요. 다시 시도해주세요.'}`);
+  }
+}
+
+// ───────────────────────────────────────
+// STEP 2: 안내문 분석 후 희망 진로만 묻기
+// ───────────────────────────────────────
+function showCareerForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  wrap.innerHTML = `
+    <div class="ai-avatar">🤖</div>
+    <div style="width:100%">
+      <div class="ai-name">AI 수행평가 코치</div>
+      <div class="info-form" id="careerForm">
+        <div class="form-group">
+          <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
+          <input class="form-input" id="careerOnlyInput" placeholder="예: 심리상담사, 의사, AI 개발자"
+            onkeydown="if(event.key==='Enter') submitCareerOnly()"/>
+        </div>
+        <button class="form-submit" onclick="submitCareerOnly()">✨ 주제 추천받기</button>
+      </div>
+    </div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+async function submitCareerOnly() {
+  const career = document.getElementById('careerOnlyInput')?.value?.trim();
+  if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
+  document.getElementById('careerForm').style.display = 'none';
+
+  studentInfo = { ...studentInfo, career };
   document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`${grade} / ${subject} / ${career}`);
+  addUserMsg(`희망 진로: ${career}`);
   addLoading();
 
   try {
@@ -708,14 +596,15 @@ async function submitInfo() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        grade, subject,
+        grade: '고등학생',
+        subject: studentInfo.subject,
         desired_career: career,
         assessment_info: assessmentInfo || null
       })
     });
     const data = await res.json();
     removeLoading();
-    updateStep(3);
+    updateStep(4);
     showTopicCards(data.topics);
   } catch(e) {
     removeLoading();
@@ -723,7 +612,101 @@ async function submitInfo() {
   }
 }
 
+// ───────────────────────────────────────
+// 안내문 없이 시작하기 (업로드 화면에서)
+// ───────────────────────────────────────
+function skipToFormFromUpload() {
+  const uploadWrap = document.getElementById('uploadAreaWrap');
+  if(uploadWrap) uploadWrap.remove();
+  pendingImages = [];
+  addUserMsg('안내문 없이 시작할게요');
+  updateStep(3);
+  addAiMsg('알겠어요! 아래 정보를 입력해주세요 😊', true);
+  showSkipForm();
+}
+
+// 안내문 없이 시작: 과목 + 이전 주제 + 대략적인 수행평가 정보 + 희망진로
+function showSkipForm() {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  wrap.innerHTML = `
+    <div class="ai-avatar">🤖</div>
+    <div style="width:100%">
+      <div class="ai-name">AI 수행평가 코치</div>
+      <div class="info-form" id="skipForm">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSubjectInput">
+              <option>국어</option><option>영어</option><option>수학</option>
+              <option>사회/역사</option><option>과학</option><option>기타</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">같은 과목에서 이전에 한 주제</label>
+            <input class="form-input" id="skipPrevTopicInput" placeholder="예: 독서 감상문, 논설문 등"/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">대략적인 수행평가 정보 <span style="color:#ef4444;">*</span></label>
+          <textarea class="form-textarea" id="skipAssessInfoInput"
+            placeholder="예: 3학년 국어 수행평가, 소설 분석 보고서, A4 2장 분량, 제출기한 6월 20일 등 알고 있는 정보를 자유롭게 써주세요"></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
+          <input class="form-input" id="skipCareerInput" placeholder="예: 심리상담사, 의사, AI 개발자"/>
+        </div>
+        <button class="form-submit" onclick="submitSkipForm()">✨ 주제 추천받기</button>
+      </div>
+    </div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+async function submitSkipForm() {
+  const subject    = document.getElementById('skipSubjectInput').value;
+  const prevTopic  = document.getElementById('skipPrevTopicInput').value.trim();
+  const assessInfo = document.getElementById('skipAssessInfoInput').value.trim();
+  const career     = document.getElementById('skipCareerInput').value.trim();
+
+  if(!assessInfo) { showToast('수행평가 정보를 입력해주세요!'); return; }
+  if(!career)     { showToast('희망 진로를 입력해주세요!'); return; }
+
+  document.getElementById('skipForm').style.display = 'none';
+
+  studentInfo = { subject, prevTopic, career };
+  assessmentInfo = assessInfo;
+  document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+  document.getElementById('headerBadge').textContent = career;
+
+  addUserMsg(`과목: ${subject}${prevTopic?' / 이전: '+prevTopic:''} / 진로: ${career}`);
+  addLoading();
+
+  try {
+    const res = await apiFetch(`${API}/recommend-topics`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        session_id: sessionId,
+        grade: '고등학생',
+        subject,
+        desired_career: career,
+        assessment_info: assessInfo
+      })
+    });
+    const data = await res.json();
+    removeLoading();
+    updateStep(4);
+    showTopicCards(data.topics);
+  } catch(e) {
+    removeLoading();
+    addAiMsg(`❌ ${e.message || '오류가 발생했어요. 다시 시도해주세요.'}`);
+  }
+}
+
+// ───────────────────────────────────────
 // 주제 카드
+// ───────────────────────────────────────
 function showTopicCards(text) {
   const lines = text.split('\n');
   const topics = [];
@@ -751,16 +734,13 @@ function showTopicCards(text) {
     <div class="quick-btns"><button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button></div>`, true, true);
 }
 
-// 주제 선택
 async function selectTopic(el, topic) {
   document.querySelectorAll('.recommend-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
   selectedTopic = topic;
-
   addUserMsg(`"${topic}" 으로 할게요!`);
   addLoading();
   switchTab('resources');
-
   try {
     const res = await apiFetch(`${API}/find-resources`, {
       method:'POST',
@@ -769,7 +749,7 @@ async function selectTopic(el, topic) {
     });
     const data = await res.json();
     removeLoading();
-    updateStep(4);
+    updateStep(5);
     addAiMsg(`좋아요! 🌟 관련 자료를 오른쪽 <strong>맞춤 자료 탭</strong>에서 확인하세요!`, true, true);
     renderResources(data.resources, topic);
     showEvalInput();
@@ -779,7 +759,6 @@ async function selectTopic(el, topic) {
   }
 }
 
-// 자료 패널
 function renderResources(text, topic) {
   const blocks = text.split(/\n(?=\[자료\s*\d+\])/);
   let html = `
@@ -787,32 +766,24 @@ function renderResources(text, topic) {
       <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">선택 주제</div>
       <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${esc(topic)}</div>
       <div class="meta-tags">
-        <span class="meta-tag tag-subject">${studentInfo?.subject||'국어'}</span>
-        <span class="meta-tag tag-grade">${studentInfo?.grade||'고2'}</span>
+        <span class="meta-tag tag-subject">${studentInfo?.subject||''}</span>
         <span class="meta-tag tag-career">${studentInfo?.career||''}</span>
       </div>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">`;
-
   if(blocks.length > 1) {
     blocks.forEach((block,i) => {
       const title = (block.match(/\[자료\s*\d+\][^\n]*/)||[block.split('\n')[0]])[0].replace(/[\[\]]/g,'').trim();
       const rest = block.replace(/[^\n]+/,'').trim();
-      html += `<div class="resource-card">
-        <span class="resource-badge">자료 ${i+1}</span>
-        <div class="resource-title">${esc(title)}</div>
-        <div class="resource-desc">${esc(rest).replace(/\n/g,'<br>')}</div>
-      </div>`;
+      html += `<div class="resource-card"><span class="resource-badge">자료 ${i+1}</span><div class="resource-title">${esc(title)}</div><div class="resource-desc">${esc(rest).replace(/\n/g,'<br>')}</div></div>`;
     });
   } else {
     html += `<div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(text).replace(/\n/g,'<br>')}</div>`;
   }
-
   html += `<button class="btn-primary" style="width:100%;margin-top:8px;" onclick="switchTab('eval')">📝 완성본 평가받기 →</button>`;
   document.getElementById('resourceContent').innerHTML = html;
 }
 
-// 평가 입력
 function showEvalInput() {
   addAiMsg(`완성본이 준비되면 평가받으세요! 📋<br>
     <div class="eval-type-tabs">
@@ -821,9 +792,7 @@ function showEvalInput() {
     </div>
     <div id="evalTextArea">
       <textarea class="submit-textarea" id="submissionText" placeholder="완성된 수행평가 내용을 여기에 붙여넣으세요..."></textarea>
-      <div style="margin-top:10px;">
-        <button class="btn-primary" onclick="evaluateSubmission()">📊 평가받기</button>
-      </div>
+      <div style="margin-top:10px;"><button class="btn-primary" onclick="evaluateSubmission()">📊 평가받기</button></div>
     </div>
     <div id="evalImageArea" style="display:none;">
       <div class="eval-upload-area" onclick="document.getElementById('evalImageInput').click()">
@@ -841,19 +810,14 @@ function switchEvalType(type) {
   document.getElementById('evalImageArea').style.display = type==='image' ? 'block' : 'none';
 }
 
-// 4번: 평가
 async function evaluateSubmission() {
   const text = document.getElementById('submissionText')?.value?.trim();
   if(!text) { showToast('평가할 내용을 입력해주세요!'); return; }
-
   addUserMsg(text.slice(0,80)+(text.length>80?'...':''));
-  addLoading();
-  switchTab('eval');
-
+  addLoading(); switchTab('eval');
   const formData = new FormData();
   formData.append('session_id', sessionId);
   formData.append('submission_text', text);
-
   try {
     const res = await apiFetch(`${API}/evaluate-text`, { method:'POST', body:formData });
     const data = await res.json();
@@ -866,7 +830,6 @@ async function evaluateSubmission() {
   }
 }
 
-// 평가 패널
 function renderEvaluation(text) {
   document.getElementById('evalContent').innerHTML = `
     <div style="margin-bottom:16px;">
@@ -874,12 +837,9 @@ function renderEvaluation(text) {
       <div style="font-size:14px;font-weight:700;">${esc(selectedTopic||'')}</div>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">
-    <div class="eval-section">
-      <div class="eval-text">${esc(text).replace(/\n/g,'<br>')}</div>
-    </div>`;
+    <div class="eval-section"><div class="eval-text">${esc(text).replace(/\n/g,'<br>')}</div></div>`;
 }
 
-// 재추천
 async function retryTopics() {
   if(!studentInfo) return;
   addUserMsg('다른 주제로 다시 추천해주세요!');
@@ -888,18 +848,17 @@ async function retryTopics() {
     const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id:sessionId, grade:studentInfo.grade, subject:studentInfo.subject, desired_career:studentInfo.career })
+      body: JSON.stringify({ session_id:sessionId, grade:'고등학생', subject:studentInfo.subject, desired_career:studentInfo.career })
     });
     const data = await res.json();
     removeLoading();
     showTopicCards(data.topics);
   } catch(e) {
     removeLoading();
-    addAiMsg(`❌ ${e.message || '오류가 발생했어요. 다시 시도해주세요.'}`);
+    addAiMsg(`❌ ${e.message || '오류가 발생했어요.'}`);
   }
 }
 
-// 일반 채팅
 async function sendMessage() {
   const input = document.getElementById('chatInput');
   const text = input.value.trim();
@@ -907,17 +866,11 @@ async function sendMessage() {
   input.value = ''; autoResize(input);
   addUserMsg(text);
   addLoading();
-
   try {
     const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        session_id: sessionId,
-        grade: studentInfo?.grade||'고2',
-        subject: studentInfo?.subject||'국어',
-        desired_career: text
-      })
+      body: JSON.stringify({ session_id:sessionId, grade:'고등학생', subject:studentInfo?.subject||'국어', desired_career:text })
     });
     const data = await res.json();
     removeLoading();
@@ -928,106 +881,14 @@ async function sendMessage() {
   }
 }
 
-function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); } }
-function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
-
-// ───────────────────────────────────────
-// 스크랩 기능
-// ───────────────────────────────────────
-let scraps = JSON.parse(localStorage.getItem('scraps') || '[]');
-
-function updateScrapCount() {
-  const badge = document.getElementById('scrapCount');
-  if(scraps.length > 0) {
-    badge.textContent = scraps.length;
-    badge.style.display = 'inline';
-  } else {
-    badge.style.display = 'none';
-  }
-}
-
-function addScrapBtn(msgEl, content) {
-  const btn = document.createElement('button');
-  btn.innerHTML = '📌 스크랩';
-  btn.style.cssText = 'margin-top:8px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;background:#fff;color:var(--text-sub);font-family:"Noto Sans KR",sans-serif;transition:all 0.2s;';
-  btn.onmouseover = () => { btn.style.borderColor='var(--primary)'; btn.style.color='var(--primary)'; };
-  btn.onmouseout = () => { if(!btn.dataset.saved) { btn.style.borderColor='var(--border)'; btn.style.color='var(--text-sub)'; } };
-  btn.onclick = () => {
-    const scrap = {
-      id: Date.now(),
-      content: content,
-      subject: studentInfo?.subject || '',
-      career: studentInfo?.career || '',
-      date: new Date().toLocaleDateString('ko-KR')
-    };
-    scraps.unshift(scrap);
-    localStorage.setItem('scraps', JSON.stringify(scraps));
-    updateScrapCount();
-    btn.innerHTML = '✅ 스크랩됨';
-    btn.style.borderColor = '#22c55e';
-    btn.style.color = '#16a34a';
-    btn.dataset.saved = 'true';
-    showToast('📌 스크랩에 저장됐어요!');
-  };
-  msgEl.querySelector('.ai-bubble').after(btn);
-}
-
-function openScrapModal() {
-  const modal = document.getElementById('scrapModal');
-  const body = document.getElementById('scrapModalBody');
-
-  if(scraps.length === 0) {
-    body.innerHTML = '<div class="scrap-empty">아직 스크랩한 내용이 없어요<br><br>AI 답변 아래 📌 스크랩 버튼을 눌러<br>중요한 내용을 저장해보세요!</div>';
-  } else {
-    body.innerHTML = scraps.map(s => `
-      <div class="scrap-item">
-        <button class="scrap-delete" onclick="deleteScrap(${s.id})">✕</button>
-        <div class="scrap-item-title">${s.subject ? `[${esc(s.subject)}]` : ''} ${s.career ? esc(s.career) : '저장된 내용'}</div>
-        <div class="scrap-item-preview">${esc(s.content.slice(0,120))}${s.content.length>120?'...':''}</div>
-        <div class="scrap-item-date">📅 ${s.date}</div>
-      </div>
-    `).join('');
-  }
-  modal.classList.add('show');
-}
-
-function deleteScrap(id) {
-  scraps = scraps.filter(s => s.id !== id);
-  localStorage.setItem('scraps', JSON.stringify(scraps));
-  updateScrapCount();
-  openScrapModal();
-  showToast('🗑️ 스크랩이 삭제됐어요.');
-}
-
-function closeScrapModal(e) {
-  if(e.target === document.getElementById('scrapModal')) closeScrapModalBtn();
-}
-function closeScrapModalBtn() {
-  document.getElementById('scrapModal').classList.remove('show');
-  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
-  document.querySelector('.sidebar-item').classList.add('active');
-}
-
-function setActiveMenu(el) {
-  document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active'));
-  el.classList.add('active');
-}
-
-// ───────────────────────────────────────
-// 이미지로 완성본 평가
-// ───────────────────────────────────────
 async function evaluateImage(event) {
   const file = event.target.files[0];
   if(!file) return;
-
   addUserMsg(`📷 이미지로 평가 요청: ${file.name}`);
-  addLoading();
-  switchTab('eval');
-
+  addLoading(); switchTab('eval');
   const formData = new FormData();
   formData.append('session_id', sessionId);
   formData.append('image', file);
-
   try {
     const res = await apiFetch(`${API}/evaluate-image`, { method:'POST', body:formData });
     const data = await res.json();
@@ -1042,6 +903,112 @@ async function evaluateImage(event) {
   event.target.value = '';
 }
 
+// ───────────────────────────────────────
+// 유틸
+// ───────────────────────────────────────
+async function apiFetch(url, options={}, timeoutMs=120000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    if(e.name==='AbortError') throw new Error('응답 시간이 너무 길어요. 잠시 후 다시 시도해주세요.');
+    throw e;
+  }
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', ['chat','resources','eval'][i]===tab));
+  document.getElementById('panelResources').style.display = tab==='resources' ? 'flex' : 'none';
+  document.getElementById('panelEval').style.display = tab==='eval' ? 'flex' : 'none';
+}
+
+function updateStep(step) {
+  for(let i=1;i<=5;i++) {
+    const el = document.getElementById(`step${i}`);
+    el.classList.remove('done','current');
+    if(i<step) { el.classList.add('done'); el.querySelector('.step-dot').textContent='✓'; }
+    else if(i===step) el.classList.add('current');
+  }
+}
+
+function addAiMsg(html, isHTML=false, scrapable=false) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  const content = isHTML ? html : esc(html).replace(/\n/g,'<br>');
+  wrap.innerHTML = `<div class="ai-avatar">🤖</div><div><div class="ai-name">AI 수행평가 코치</div><div class="ai-bubble">${content}</div></div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  if(scrapable) addScrapBtn(wrap, wrap.querySelector('.ai-bubble').innerText);
+  scrollBot();
+  return wrap;
+}
+
+function addUserMsg(text) {
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-user';
+  wrap.innerHTML = `<div class="user-bubble">${esc(text).replace(/\n/g,'<br>')}</div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+function addLoading() {
+  const wrap = document.createElement('div');
+  wrap.className='msg-ai'; wrap.id='loadingMsg';
+  wrap.innerHTML=`<div class="ai-avatar">🤖</div><div><div class="ai-name">AI 수행평가 코치</div><div class="ai-bubble"><div class="loading-bubble"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div></div></div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+function removeLoading() { const e=document.getElementById('loadingMsg'); if(e) e.remove(); }
+function scrollBot() { const e=document.getElementById('chatMessages'); e.scrollTop=e.scrollHeight; }
+function esc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
+function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+
+// 스크랩
+let scraps = JSON.parse(localStorage.getItem('scraps')||'[]');
+function updateScrapCount() {
+  const badge=document.getElementById('scrapCount');
+  if(scraps.length>0){badge.textContent=scraps.length;badge.style.display='inline';}
+  else badge.style.display='none';
+}
+function addScrapBtn(msgEl, content) {
+  const btn=document.createElement('button');
+  btn.innerHTML='📌 스크랩';
+  btn.style.cssText='margin-top:8px;padding:5px 12px;border:1px solid var(--border);border-radius:20px;font-size:11px;cursor:pointer;background:#fff;color:var(--text-sub);font-family:"Noto Sans KR",sans-serif;transition:all 0.2s;';
+  btn.onmouseover=()=>{btn.style.borderColor='var(--primary)';btn.style.color='var(--primary)';};
+  btn.onmouseout=()=>{if(!btn.dataset.saved){btn.style.borderColor='var(--border)';btn.style.color='var(--text-sub)';}};
+  btn.onclick=()=>{
+    const scrap={id:Date.now(),content,subject:studentInfo?.subject||'',career:studentInfo?.career||'',date:new Date().toLocaleDateString('ko-KR')};
+    scraps.unshift(scrap);localStorage.setItem('scraps',JSON.stringify(scraps));updateScrapCount();
+    btn.innerHTML='✅ 스크랩됨';btn.style.borderColor='#22c55e';btn.style.color='#16a34a';btn.dataset.saved='true';
+    showToast('📌 스크랩에 저장됐어요!');
+  };
+  msgEl.querySelector('.ai-bubble').after(btn);
+}
+function openScrapModal() {
+  const body=document.getElementById('scrapModalBody');
+  body.innerHTML=scraps.length===0?'<div class="scrap-empty">아직 스크랩한 내용이 없어요</div>':
+    scraps.map(s=>`<div class="scrap-item"><button class="scrap-delete" onclick="deleteScrap(${s.id})">✕</button><div class="scrap-item-title">${s.subject?`[${esc(s.subject)}] `:''}${s.career?esc(s.career):'저장된 내용'}</div><div class="scrap-item-preview">${esc(s.content.slice(0,120))}${s.content.length>120?'...':''}</div><div class="scrap-item-date">📅 ${s.date}</div></div>`).join('');
+  document.getElementById('scrapModal').classList.add('show');
+}
+function deleteScrap(id) {
+  scraps=scraps.filter(s=>s.id!==id);localStorage.setItem('scraps',JSON.stringify(scraps));updateScrapCount();openScrapModal();showToast('🗑️ 삭제됐어요.');
+}
+function closeScrapModal(e) { if(e.target===document.getElementById('scrapModal')) closeScrapModalBtn(); }
+function closeScrapModalBtn() { document.getElementById('scrapModal').classList.remove('show'); document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active')); document.querySelector('.sidebar-item').classList.add('active'); }
+function setActiveMenu(el) { document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
+
+async function init() {
+  try { await fetch(`${API}/`); } catch(e) {
+    document.getElementById('connectingBanner').classList.add('show');
+    setTimeout(async()=>{ try { await fetch(`${API}/`); document.getElementById('connectingBanner').classList.remove('show'); } catch(e2){} },30000);
+  }
+}
 init();
 updateScrapCount();
 </script>
