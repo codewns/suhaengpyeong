@@ -133,6 +133,32 @@ def db_get_student(code: str) -> Optional[dict]:
         print(f"학생 조회 오류: {e}")
         return None
 
+def db_check_call_limit(code: str) -> tuple[bool, int, int]:
+    """호출 가능 여부 반환. (가능여부, 현재횟수, 최대횟수)"""
+    try:
+        student = db_get_student(code)
+        if not student:
+            return False, 0, 0
+        limit = student.get("call_limit") or 0
+        count = student.get("call_count") or 0
+        if limit == 0:  # 무제한
+            return True, count, limit
+        return count < limit, count, limit
+    except Exception as e:
+        print(f"호출 제한 확인 오류: {e}")
+        return True, 0, 0  # 오류 시 통과
+
+def db_increment_call_count(code: str):
+    """호출 횟수 1 증가"""
+    try:
+        student = db_get_student(code)
+        if not student:
+            return
+        count = (student.get("call_count") or 0) + 1
+        supabase.table("students").update({"call_count": count}).eq("code", code.upper()).execute()
+    except Exception as e:
+        print(f"호출 횟수 업데이트 오류: {e}")
+
 def db_get_conversation(code: str) -> Optional[dict]:
     try:
         res = supabase.table("conversations").select("*").eq("student_code", code.upper()).order("updated_at", desc=True).limit(1).execute()
@@ -167,14 +193,24 @@ def db_save_conversation(session: StudentSession):
 
 
 # ───────────────────────────────────────
-# Gemini 호출
+# Gemini 호출 (호출 제한 포함)
 # ───────────────────────────────────────
-def call_text(system: str, user_msg: str, history: list = None) -> str:
+def call_text(system: str, user_msg: str, history: list = None, student_code: str = None) -> str:
+    if student_code:
+        allowed, count, limit = db_check_call_limit(student_code)
+        if not allowed:
+            raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
+        db_increment_call_count(student_code)
     model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
     chat = model.start_chat(history=history or [])
     return chat.send_message(user_msg).text
 
-def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str) -> str:
+def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, student_code: str = None) -> str:
+    if student_code:
+        allowed, count, limit = db_check_call_limit(student_code)
+        if not allowed:
+            raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
+        db_increment_call_count(student_code)
     model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
     return model.generate_content([
         {"mime_type": mime_type, "data": image_bytes},
@@ -241,6 +277,8 @@ def login(req: LoginRequest):
         "name": name,
         "code": code,
         "previous": prev,
+        "call_limit": student.get("call_limit") or 0,
+        "call_count": student.get("call_count") or 0,
         "message": f"안녕하세요, {name}님! 👋"
     }
 
@@ -315,7 +353,7 @@ async def analyze_assessment(
 불확실한 정보는 절대 임의로 추가하지 마세요 (원칙 6).
 """.strip()
 
-    result = call_vision(system, image_bytes, mime_type, "수행평가 안내문의 모든 정보를 추출해주세요.")
+    result = call_vision(system, image_bytes, mime_type, "수행평가 안내문의 모든 정보를 추출해주세요.", student_code=session.student_code)
 
     # 여러 장 업로드 시 결과를 누적
     session.assessment_info = (session.assessment_info or "") + "\n\n" + result
@@ -328,7 +366,8 @@ async def analyze_assessment(
     if session.student_code:
         db_save_conversation(session)
 
-    return {"status": "success", "assessment_info": result}
+    student = db_get_student(session.student_code) if session.student_code else {}
+    return {"status": "success", "assessment_info": result, "call_count": student.get("call_count", 0) if student else 0, "call_limit": student.get("call_limit", 0) if student else 0}
 
 
 # ───────────────────────────────────────
@@ -423,7 +462,7 @@ def recommend_topics(req: StudentInfoRequest):
 특히 이전 주제({previous_topic})가 있다면 그것을 심화·확장하는 방향을 최우선으로 고려하세요.
 """
 
-    result = call_text(system, user_msg, session.history)
+    result = call_text(system, user_msg, session.history, student_code=session.student_code)
     session.recommended_topics = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
@@ -433,7 +472,8 @@ def recommend_topics(req: StudentInfoRequest):
     if session.student_code:
         db_save_conversation(session)
 
-    return {"status": "success", "topics": result}
+    student = db_get_student(session.student_code) if session.student_code else {}
+    return {"status": "success", "topics": result, "call_count": student.get("call_count", 0) if student else 0, "call_limit": student.get("call_limit", 0) if student else 0}
 
 
 # ───────────────────────────────────────
@@ -505,7 +545,7 @@ def find_resources(req: ResourceRequest):
 추후 심화 탐구로 이어질 수 있는 자료를 우선 추천해주세요.
 """
 
-    result = call_text(system, user_msg, session.history)
+    result = call_text(system, user_msg, session.history, student_code=session.student_code)
     session.recommended_resources = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
@@ -514,7 +554,8 @@ def find_resources(req: ResourceRequest):
     if session.student_code:
         db_save_conversation(session)
 
-    return {"status": "success", "resources": result}
+    student = db_get_student(session.student_code) if session.student_code else {}
+    return {"status": "success", "resources": result, "call_count": student.get("call_count", 0) if student else 0, "call_limit": student.get("call_limit", 0) if student else 0}
 
 
 # ───────────────────────────────────────
@@ -578,7 +619,7 @@ def evaluate_text(
 핵심 원칙을 최우선으로 지키면서 항목별로 평가해주세요.
 """
 
-    result = call_text(system, user_msg, session.history)
+    result = call_text(system, user_msg, session.history, student_code=session.student_code)
     session.evaluation_result = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
@@ -588,7 +629,8 @@ def evaluate_text(
     if session.student_code:
         db_save_conversation(session)
 
-    return {"status": "success", "evaluation": result}
+    student = db_get_student(session.student_code) if session.student_code else {}
+    return {"status": "success", "evaluation": result, "call_count": student.get("call_count", 0) if student else 0, "call_limit": student.get("call_limit", 0) if student else 0}
 
 
 # ───────────────────────────────────────
@@ -640,7 +682,7 @@ async def evaluate_image(
 총평:
 """.strip()
 
-    result = call_vision(system, image_bytes, mime_type, "이 이미지가 학생 수행평가 제출물입니다. 핵심 원칙을 최우선으로 지키며 평가해주세요.")
+    result = call_vision(system, image_bytes, mime_type, "이 이미지가 학생 수행평가 제출물입니다. 핵심 원칙을 최우선으로 지키며 평가해주세요.", student_code=session.student_code)
     session.evaluation_result = result
     session.step = "evaluated"
     _sessions[session_id] = session
@@ -648,7 +690,8 @@ async def evaluate_image(
     if session.student_code:
         db_save_conversation(session)
 
-    return {"status": "success", "evaluation": result}
+    student = db_get_student(session.student_code) if session.student_code else {}
+    return {"status": "success", "evaluation": result, "call_count": student.get("call_count", 0) if student else 0, "call_limit": student.get("call_limit", 0) if student else 0}
 
 
 if __name__ == "__main__":
