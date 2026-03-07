@@ -1016,21 +1016,8 @@ async function sendMessage() {
     return;
   }
 
-  // 그 외엔 AI 호출
-  addLoading();
-  try {
-    const res = await apiFetch(`${API}/recommend-topics`, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id:sessionId, grade:'고등학생', subject:studentInfo?.subject||'국어', desired_career:text })
-    });
-    const data = await res.json();
-    removeLoading();
-    addAiMsg(esc(data.topics).replace(/\n/g,'<br>'), true);
-  } catch(e) {
-    removeLoading();
-    addAiMsg('죄송해요, 잠시 후 다시 시도해주세요.');
-  }
+  // 그 외엔 고정 응답
+  addAiMsg('수행평가와 관련된 질문을 해주세요 😊');
 }
 
 async function evaluateImage(event) {
