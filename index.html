@@ -365,6 +365,7 @@ let selectedTopic = null;
 let assessmentInfo = null;
 let studentName = null;
 let studentCode = null;
+let prevSessionData = null; // 이전 세션 데이터 전역 저장
 
 // 멀티 이미지 관리
 let pendingImages = []; // { file, dataUrl }
@@ -399,6 +400,7 @@ async function doLogin() {
 }
 
 function showPreviousHistory(prev) {
+  prevSessionData = prev;
   addAiMsg(`반갑습니다, <strong>${studentName}</strong>님! 👋<br><br>
     지난번 기록을 불러왔어요.<br>
     📚 과목: <strong>${prev.subject||'-'}</strong><br>
@@ -406,12 +408,18 @@ function showPreviousHistory(prev) {
     이어서 하시겠어요?`, true);
   const html = `
     <div class="quick-btns">
-      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.career||'')}','${esc(prev.selected_topic||'')}','${esc(prev.topics||'')}')">▶ 이어서 하기</button>
+      <button class="quick-btn" onclick="resumeFromPrev()">▶ 이어서 하기</button>
       <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">🔄 새로 시작하기</button>
     </div>`;
   addAiMsg(html, true);
   if(prev.resources) document.getElementById('resourceContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.resources)).replace(/\n/g,'<br>')}</div>`;
   if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.evaluation)).replace(/\n/g,'<br>')}</div>`;
+}
+
+function resumeFromPrev() {
+  if(!prevSessionData) return;
+  const p = prevSessionData;
+  resumeSession(p.subject||'', p.career||'', p.selected_topic||'', p.topics||'');
 }
 
 function resumeSession(subject, career, topic, topics) {
