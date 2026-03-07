@@ -380,13 +380,12 @@ async function doLogin() {
 function showPreviousHistory(prev) {
   addAiMsg(`반갑습니다, <strong>${studentName}</strong>님! 👋<br><br>
     지난번 기록을 불러왔어요.<br>
-    📅 마지막 접속: <strong>${prev.date}</strong><br>
     📚 과목: <strong>${prev.subject||'-'}</strong><br>
-    🎯 선택 주제: <strong>${prev.topic||'-'}</strong><br><br>
+    🎯 선택 주제: <strong>${prev.topic||'아직 선택 전'}</strong><br><br>
     이어서 하시겠어요?`, true);
   const html = `
     <div class="quick-btns">
-      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.career||'')}','${esc(prev.topic||'')}')">▶ 이어서 하기</button>
+      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.career||'')}','${esc(prev.topic||'')}','${esc(prev.topics||'')}')">▶ 이어서 하기</button>
       <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">🔄 새로 시작하기</button>
     </div>`;
   addAiMsg(html, true);
@@ -394,13 +393,27 @@ function showPreviousHistory(prev) {
   if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.evaluation).replace(/\n/g,'<br>')}</div>`;
 }
 
-function resumeSession(subject, career, topic) {
+function resumeSession(subject, career, topic, topics) {
   studentInfo = { subject, career };
-  selectedTopic = topic;
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
-  updateStep(5);
-  addAiMsg(`좋아요! <strong>${topic}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
-  showEvalInput();
+
+  if(topic) {
+    // 주제가 있으면 바로 평가 단계
+    selectedTopic = topic;
+    updateStep(5);
+    addAiMsg(`좋아요! <strong>${topic}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
+    if(!document.querySelector('.submission-textarea')) showEvalInput();
+  } else if(topics) {
+    // 주제 추천은 있었지만 선택 안 한 경우 → 카드 다시 보여주기
+    updateStep(4);
+    addAiMsg(`지난번에 추천받은 주제 중에서 골라주세요! 🎯`, true);
+    showTopicCards(topics);
+  } else {
+    // 주제 추천도 없으면 처음부터
+    updateStep(3);
+    addAiMsg(`주제부터 다시 추천받을게요!`, true);
+    requestTopics();
+  }
 }
 
 // ───────────────────────────────────────
