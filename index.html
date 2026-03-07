@@ -399,7 +399,7 @@ function showWelcome(name) {
   showPreUploadForm();
 }
 
-// STEP 0 폼: 과목 + 이전 주제 (이미지 업로드 전 필수)
+// STEP 0 폼: 과목 + 이전 주제 + 희망 진로 (이미지 업로드 전 필수)
 function showPreUploadForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
@@ -419,8 +419,13 @@ function showPreUploadForm() {
           </div>
           <div class="form-group">
             <label class="form-label">같은 과목에서 이전에 한 주제</label>
-            <input class="form-input" id="prePrevTopicInput" placeholder="예: 독서 감상문, 논설문 쓰기 등" />
+            <input class="form-input" id="prePrevTopicInput" placeholder="" />
           </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
+          <input class="form-input" id="preCareerInput" placeholder=""
+            onkeydown="if(event.key==='Enter') submitPreForm()" />
         </div>
         <button class="form-submit" onclick="submitPreForm()">다음 단계 →</button>
       </div>
@@ -430,17 +435,20 @@ function showPreUploadForm() {
 }
 
 function submitPreForm() {
-  const subject = document.getElementById('preSubjectInput').value;
+  const subject  = document.getElementById('preSubjectInput').value;
   const prevTopic = document.getElementById('prePrevTopicInput').value.trim();
+  const career   = document.getElementById('preCareerInput').value.trim();
 
-  // 과목은 필수
+  if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
+
   document.getElementById('preUploadForm').style.display = 'none';
   updateStep(2);
 
-  studentInfo = { ...(studentInfo || {}), subject, prevTopic };
+  studentInfo = { ...(studentInfo || {}), subject, prevTopic, career };
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+  document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''}`);
+  addUserMsg(`과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
   addAiMsg(`좋아요! 이제 <strong>수행평가 안내문 사진</strong>을 올려주세요 📄<br>
     <span style="font-size:12px;color:var(--text-sub);">여러 장도 한번에 업로드할 수 있어요!</span>`, true);
   showUploadArea();
@@ -547,8 +555,8 @@ async function uploadAllImages() {
     if(uploadWrap) uploadWrap.remove();
     pendingImages = [];
 
-    addAiMsg(`✅ <strong>안내문 분석 완료!</strong><br><br>${esc(combinedResult).replace(/\n/g,'<br>')}<br><br>이제 진로를 입력해주세요!`, true);
-    showCareerForm();
+    addAiMsg(`✅ <strong>안내문 분석 완료!</strong><br><br>${esc(combinedResult).replace(/\n/g,'<br>')}<br><br>이제 주제를 추천해드릴게요!`, true);
+    await requestTopics();
   } catch(e) {
     removeLoading();
     if(uploadWrap) uploadWrap.style.opacity = '1';
@@ -557,7 +565,35 @@ async function uploadAllImages() {
 }
 
 // ───────────────────────────────────────
-// STEP 2: 안내문 분석 후 희망 진로만 묻기
+// 업로드 후 바로 주제 추천 요청
+// ───────────────────────────────────────
+async function requestTopics() {
+  addLoading();
+  try {
+    const res = await apiFetch(`${API}/recommend-topics`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        session_id: sessionId,
+        grade: studentInfo?.grade || '고등학생',
+        subject: studentInfo?.subject || '국어',
+        desired_career: studentInfo?.career || '',
+        previous_topic: studentInfo?.prevTopic || '',
+        assessment_info: assessmentInfo || null
+      })
+    });
+    const data = await res.json();
+    removeLoading();
+    updateStep(4);
+    showTopicCards(data.topics);
+  } catch(e) {
+    removeLoading();
+    addAiMsg(`❌ ${e.message || '주제 추천 중 오류가 발생했어요.'}`);
+  }
+}
+
+// ───────────────────────────────────────
+// STEP 2: 안내문 분석 후 희망 진로만 묻기 (미사용 - 진로는 사전 폼에서 수집)
 // ───────────────────────────────────────
 function showCareerForm() {
   const wrap = document.createElement('div');
@@ -644,17 +680,16 @@ function showSkipForm() {
           </div>
           <div class="form-group">
             <label class="form-label">같은 과목에서 이전에 한 주제</label>
-            <input class="form-input" id="skipPrevTopicInput" placeholder="예: 독서 감상문, 논설문 등"/>
+            <input class="form-input" id="skipPrevTopicInput" placeholder=""/>
           </div>
         </div>
         <div class="form-group">
           <label class="form-label">대략적인 수행평가 정보 <span style="color:#ef4444;">*</span></label>
-          <textarea class="form-textarea" id="skipAssessInfoInput"
-            placeholder="예: 3학년 국어 수행평가, 소설 분석 보고서, A4 2장 분량, 제출기한 6월 20일 등 알고 있는 정보를 자유롭게 써주세요"></textarea>
+          <textarea class="form-textarea" id="skipAssessInfoInput" placeholder=""></textarea>
         </div>
         <div class="form-group">
           <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
-          <input class="form-input" id="skipCareerInput" placeholder="예: 심리상담사, 의사, AI 개발자"/>
+          <input class="form-input" id="skipCareerInput" placeholder=""/>
         </div>
         <button class="form-submit" onclick="submitSkipForm()">✨ 주제 추천받기</button>
       </div>
