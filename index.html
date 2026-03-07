@@ -214,10 +214,19 @@
       <span class="header-subject" id="headerTitle">수행평가 AI 코치</span>
       <span class="header-badge" id="headerBadge">새 세션</span>
     </div>
-    <div class="header-tabs">
-      <button class="header-tab active" onclick="switchTab('chat')">💬 채팅</button>
-      <button class="header-tab" onclick="switchTab('resources')">📖 맞춤 자료</button>
-      <button class="header-tab" onclick="switchTab('eval')">📝 평가 결과</button>
+    <div style="display:flex;align-items:center;gap:16px;">
+      <div id="callUsageWrap" style="display:none;align-items:center;gap:8px;">
+        <div style="font-size:11px;color:var(--text-sub);" id="callUsageText"></div>
+        <div style="width:80px;height:6px;background:#e8ecf8;border-radius:99px;overflow:hidden;">
+          <div id="callUsageBar" style="height:100%;border-radius:99px;background:var(--primary);transition:width 0.4s;"></div>
+        </div>
+        <div style="font-size:11px;font-weight:700;" id="callUsagePct"></div>
+      </div>
+      <div class="header-tabs">
+        <button class="header-tab active" onclick="switchTab('chat')">💬 채팅</button>
+        <button class="header-tab" onclick="switchTab('resources')">📖 맞춤 자료</button>
+        <button class="header-tab" onclick="switchTab('eval')">📝 평가 결과</button>
+      </div>
     </div>
   </header>
 
@@ -419,6 +428,19 @@ function resumeSession(subject, career, topic, topics) {
 // ───────────────────────────────────────
 // STEP 0: 환영 + 과목/이전주제 먼저 물어보기
 // ───────────────────────────────────────
+function updateCallUsage(count, limit) {
+  if(!limit) return; // 무제한이면 숨김
+  const remaining = Math.max(0, limit - count);
+  const pct = Math.round((remaining / limit) * 100);
+  const color = pct > 50 ? '#22c55e' : pct > 20 ? '#f59e0b' : '#ef4444';
+  document.getElementById('callUsageWrap').style.display = 'flex';
+  document.getElementById('callUsageText').textContent = `잔여 ${remaining}회`;
+  document.getElementById('callUsageBar').style.width = pct + '%';
+  document.getElementById('callUsageBar').style.background = color;
+  document.getElementById('callUsagePct').style.color = color;
+  document.getElementById('callUsagePct').textContent = pct + '%';
+}
+
 function showWelcome(name) {
   document.getElementById('chatMessages').innerHTML = '';
   addAiMsg(`안녕하세요, <strong>${name}</strong>님! 👋<br><br>
@@ -575,6 +597,7 @@ async function uploadAllImages() {
       formData.append('image', pendingImages[i].file);
       const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
       const data = await res.json();
+      if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
       combinedResult += (pendingImages.length > 1 ? `\n\n[사진 ${i+1}]\n` : '') + data.assessment_info;
     }
 
@@ -611,6 +634,7 @@ async function requestTopics() {
       })
     });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
     showTopicCards(data.topics);
@@ -667,6 +691,7 @@ async function submitCareerOnly() {
       })
     });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
     showTopicCards(data.topics);
@@ -758,6 +783,7 @@ async function submitSkipForm() {
       })
     });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
     showTopicCards(data.topics);
@@ -875,6 +901,7 @@ async function confirmTopic(idx) {
       body: JSON.stringify({ session_id:sessionId, selected_topic:t.title })
     });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(5);
     addAiMsg(`좋아요! 🌟 관련 자료를 오른쪽 <strong>맞춤 자료 탭</strong>에서 확인하세요!`, true, true);
@@ -953,6 +980,7 @@ async function evaluateSubmission(uid) {
   try {
     const res = await apiFetch(`${API}/evaluate-text`, { method:'POST', body:formData });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     addAiMsg('평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인해보세요 📊', true, true);
     renderEvaluation(data.evaluation);
@@ -983,6 +1011,7 @@ async function retryTopics() {
       body: JSON.stringify({ session_id:sessionId, grade:'고등학생', subject:studentInfo.subject, desired_career:studentInfo.career })
     });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     showTopicCards(data.topics);
   } catch(e) {
@@ -1031,6 +1060,7 @@ async function evaluateImage(event) {
   try {
     const res = await apiFetch(`${API}/evaluate-image`, { method:'POST', body:formData });
     const data = await res.json();
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     addAiMsg('이미지 평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인하세요 📊', true);
     renderEvaluation(data.evaluation);
