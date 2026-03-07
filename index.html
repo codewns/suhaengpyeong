@@ -317,39 +317,240 @@
 <!-- 이미지 평가용 파일 인풋 -->
 <input type="file" id="evalImageInput" style="display:none" accept="image/*" onchange="evaluateImage(event)">
 
+<!-- 로그인 화면 -->
+<div id="loginOverlay" style="
+  position:fixed;inset:0;background:var(--sidebar);
+  display:flex;align-items:center;justify-content:center;
+  z-index:200;
+">
+  <div style="
+    background:#fff;border-radius:24px;padding:40px;
+    width:380px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  ">
+    <div style="text-align:center;margin-bottom:28px;">
+      <div style="font-size:40px;margin-bottom:12px;">📚</div>
+      <h2 style="font-size:20px;font-weight:800;color:var(--text);">수행평가 AI 코치</h2>
+      <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">선생님께 받은 코드와 이름을 입력하세요</p>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:12px;">
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-sub);display:block;margin-bottom:6px;">이름</label>
+        <input id="loginName" class="form-input" placeholder="홍길동" style="width:100%;"
+          onkeydown="if(event.key==='Enter') document.getElementById('loginCode').focus()">
+      </div>
+      <div>
+        <label style="font-size:12px;font-weight:600;color:var(--text-sub);display:block;margin-bottom:6px;">학생 코드</label>
+        <input id="loginCode" class="form-input" placeholder="선생님께 받은 코드 입력" style="width:100%;letter-spacing:2px;text-transform:uppercase;"
+          onkeydown="if(event.key==='Enter') doLogin()">
+      </div>
+      <div id="loginError" style="font-size:12px;color:#dc2626;display:none;padding:8px 12px;background:#fee2e2;border-radius:8px;"></div>
+      <button onclick="doLogin()" style="
+        padding:14px;background:var(--primary);color:#fff;border:none;
+        border-radius:12px;font-size:15px;font-weight:700;
+        font-family:'Noto Sans KR',sans-serif;cursor:pointer;
+        transition:all 0.2s;margin-top:4px;
+      " onmouseover="this.style.background='#3d50e0'" onmouseout="this.style.background='var(--primary)'">
+        시작하기 →
+      </button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ★ Render 배포 후 아래 주소를 본인 Render 주소로 바꾸세요 ★
 // 예: 'https://suhaengpyeong-backend.onrender.com'
 const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
   ? 'http://localhost:8000'
-  : 'https://suhaengpyeong.onrender.com';
+  : 'https://여기에-render-주소.onrender.com';
 
 let sessionId = null;
 let studentInfo = null;
 let selectedTopic = null;
 let assessmentInfo = null;
+let studentName = null;
+let studentCode = null;
 
-// 초기화
+// ───────────────────────────────────────
+// 로그인
+// ───────────────────────────────────────
+async function doLogin() {
+  const name = document.getElementById('loginName').value.trim();
+  const code = document.getElementById('loginCode').value.trim().toUpperCase();
+  const errEl = document.getElementById('loginError');
+
+  if(!name || !code) {
+    errEl.textContent = '이름과 코드를 모두 입력해주세요.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  const btn = document.querySelector('#loginOverlay button');
+  btn.textContent = '확인 중...';
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ name, code })
+    });
+    const data = await res.json();
+
+    if(!res.ok) {
+      errEl.textContent = data.detail || '로그인 실패';
+      errEl.style.display = 'block';
+      btn.textContent = '시작하기 →';
+      btn.disabled = false;
+      return;
+    }
+
+    // 로그인 성공
+    sessionId = data.session_id;
+    studentName = data.name;
+    studentCode = data.code;
+
+    document.getElementById('headerBadge').textContent = data.name;
+    document.getElementById('loginOverlay').style.display = 'none';
+
+    // 이전 대화 있으면 불러오기
+    if(data.previous && (data.previous.topics || data.previous.resources || data.previous.evaluation)) {
+      showPreviousHistory(data.previous);
+    } else {
+      showWelcome(data.name);
+    }
+
+  } catch(e) {
+    errEl.textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+    errEl.style.display = 'block';
+    btn.textContent = '시작하기 →';
+    btn.disabled = false;
+  }
+}
+
+// 이전 대화 불러오기
+function showPreviousHistory(prev) {
+  addAiMsg(`반갑습니다, <strong>${studentName}</strong>님! 👋<br><br>
+    지난번 기록을 불러왔어요.<br>
+    📅 마지막 접속: <strong>${prev.date}</strong><br>
+    📚 과목: <strong>${prev.subject || '-'}</strong> / 학년: <strong>${prev.grade || '-'}</strong><br>
+    🎯 선택 주제: <strong>${prev.topic || '-'}</strong><br><br>
+    이어서 하시겠어요?`, true);
+
+  const html = `
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="resumeSession('${esc(prev.subject||'')}','${esc(prev.grade||'')}','${esc(prev.career||'')}','${esc(prev.topic||'')}')">
+        ▶ 이어서 하기
+      </button>
+      <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">
+        🔄 새로 시작하기
+      </button>
+    </div>`;
+  addAiMsg(html, true);
+
+  // 이전 자료/평가 패널에 표시
+  if(prev.resources) {
+    document.getElementById('resourceContent').innerHTML = `
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.resources).replace(/\n/g,'<br>')}</div>`;
+  }
+  if(prev.evaluation) {
+    document.getElementById('evalContent').innerHTML = `
+      <div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div>
+      <div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(prev.evaluation).replace(/\n/g,'<br>')}</div>`;
+  }
+}
+
+// 이어서 하기
+function resumeSession(subject, grade, career, topic) {
+  studentInfo = { subject, grade, career };
+  selectedTopic = topic;
+  document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+  updateStep(4);
+  addAiMsg(`좋아요! <strong>${topic}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
+  showEvalInput();
+}
+
+// 처음 환영 메시지
+function showWelcome(name) {
+  document.getElementById('chatMessages').innerHTML = '';
+  addAiMsg(`안녕하세요, <strong>${name}</strong>님! 👋<br><br>
+    수행평가 안내문을 업로드하시면 분석해드리고,<br>
+    <strong>주제 추천 → 자료 검색 → 완성본 평가</strong>까지<br>
+    단계별로 도와드릴게요!<br><br>
+    먼저 수행평가 안내문 사진을 올려주세요 📄`, true);
+
+  const uploadHtml = `
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+      <div class="upload-icon">📎</div>
+      <div class="upload-text">안내문 이미지 업로드</div>
+      <div class="upload-sub">PNG, JPG 파일 · 클릭하거나 드래그하세요</div>
+    </div>
+    <input type="file" id="fileInput" style="display:none" accept="image/*" onchange="uploadAssessment(event)">
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="skipToForm()">📝 안내문 없이 시작하기</button>
+    </div>`;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'msg-ai';
+  wrap.innerHTML = `<div class="ai-avatar">🤖</div><div><div class="ai-name">AI 수행평가 코치</div>${uploadHtml}</div>`;
+  document.getElementById('chatMessages').appendChild(wrap);
+  scrollBot();
+}
+
+// 초기화 (로그인 전 서버 연결 확인만)
 async function init() {
   try {
-    const res = await fetch(`${API}/session/create`, { method:'POST' });
-    if(!res.ok) throw new Error();
-    const data = await res.json();
-    sessionId = data.session_id;
+    await fetch(`${API}/`);
   } catch(e) {
     document.getElementById('connectingBanner').classList.add('show');
-    // 30초 후 재시도 (Render 무료 서버 깨우기)
     setTimeout(async () => {
       try {
-        const res = await fetch(`${API}/session/create`, { method:'POST' });
-        const data = await res.json();
-        sessionId = data.session_id;
+        await fetch(`${API}/`);
         document.getElementById('connectingBanner').classList.remove('show');
-        showToast('✅ 서버 연결됐어요!');
       } catch(e2) {
         document.getElementById('connectingBanner').textContent = '❌ 서버 연결 실패. 잠시 후 새로고침 해주세요.';
       }
     }, 30000);
+  }
+}
+
+// ───────────────────────────────────────
+// fetch 타임아웃 + 서버 깨우기 헬퍼
+// Render 무료 서버는 최대 60초 걸릴 수 있어서 타임아웃을 넉넉하게 설정
+// ───────────────────────────────────────
+async function apiFetch(url, options = {}, timeoutMs = 120000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  // 로딩 메시지를 시간에 따라 업데이트
+  const loadingTips = [
+    null,
+    '⏳ AI가 열심히 분석 중이에요...',
+    '⏳ 조금만 더 기다려주세요...',
+    '⏳ 거의 다 됐어요! 잠시만요...',
+  ];
+  const tipTimers = loadingTips.map((tip, i) => {
+    if(!tip) return null;
+    return setTimeout(() => {
+      const el = document.querySelector('#loadingMsg .ai-bubble');
+      if(el) el.innerHTML = `<div style="font-size:13px;color:var(--text-sub);">${tip}</div>`;
+    }, i * 20000);
+  });
+
+  try {
+    const res = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(timer);
+    tipTimers.forEach(t => t && clearTimeout(t));
+    return res;
+  } catch(e) {
+    clearTimeout(timer);
+    tipTimers.forEach(t => t && clearTimeout(t));
+    if(e.name === 'AbortError') {
+      throw new Error('응답 시간이 너무 길어요. 서버가 재시작 중일 수 있어요. 잠시 후 다시 시도해주세요.');
+    }
+    throw e;
   }
 }
 
@@ -430,7 +631,7 @@ async function uploadAssessment(event) {
   formData.append('image', file);
 
   try {
-    const res = await fetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
+    const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
     const data = await res.json();
     removeLoading();
     assessmentInfo = data.assessment_info;
@@ -439,7 +640,7 @@ async function uploadAssessment(event) {
     showStudentForm();
   } catch(e) {
     removeLoading();
-    addAiMsg('❌ 분석 중 오류가 발생했어요. 다시 시도해주세요.');
+    addAiMsg(`❌ ${e.message || '분석 중 오류가 발생했어요. 다시 시도해주세요.'}`);
   }
 }
 
@@ -502,7 +703,7 @@ async function submitInfo() {
   addLoading();
 
   try {
-    const res = await fetch(`${API}/recommend-topics`, {
+    const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -518,7 +719,7 @@ async function submitInfo() {
     showTopicCards(data.topics);
   } catch(e) {
     removeLoading();
-    addAiMsg('오류가 발생했어요. 서버 상태를 확인해주세요.');
+    addAiMsg(`❌ ${e.message || '오류가 발생했어요. 다시 시도해주세요.'}`);
   }
 }
 
@@ -561,7 +762,7 @@ async function selectTopic(el, topic) {
   switchTab('resources');
 
   try {
-    const res = await fetch(`${API}/find-resources`, {
+    const res = await apiFetch(`${API}/find-resources`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ session_id:sessionId, selected_topic:topic })
@@ -574,7 +775,7 @@ async function selectTopic(el, topic) {
     showEvalInput();
   } catch(e) {
     removeLoading();
-    addAiMsg('자료 검색 중 오류가 발생했어요.');
+    addAiMsg(`❌ ${e.message || '자료 검색 중 오류가 발생했어요.'}`);
   }
 }
 
@@ -654,14 +855,14 @@ async function evaluateSubmission() {
   formData.append('submission_text', text);
 
   try {
-    const res = await fetch(`${API}/evaluate-text`, { method:'POST', body:formData });
+    const res = await apiFetch(`${API}/evaluate-text`, { method:'POST', body:formData });
     const data = await res.json();
     removeLoading();
     addAiMsg('평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인해보세요 📊', true, true);
     renderEvaluation(data.evaluation);
   } catch(e) {
     removeLoading();
-    addAiMsg('평가 중 오류가 발생했어요.');
+    addAiMsg(`❌ ${e.message || '평가 중 오류가 발생했어요.'}`);
   }
 }
 
@@ -684,7 +885,7 @@ async function retryTopics() {
   addUserMsg('다른 주제로 다시 추천해주세요!');
   addLoading();
   try {
-    const res = await fetch(`${API}/recommend-topics`, {
+    const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ session_id:sessionId, grade:studentInfo.grade, subject:studentInfo.subject, desired_career:studentInfo.career })
@@ -694,7 +895,7 @@ async function retryTopics() {
     showTopicCards(data.topics);
   } catch(e) {
     removeLoading();
-    addAiMsg('오류가 발생했어요. 다시 시도해주세요.');
+    addAiMsg(`❌ ${e.message || '오류가 발생했어요. 다시 시도해주세요.'}`);
   }
 }
 
@@ -708,7 +909,7 @@ async function sendMessage() {
   addLoading();
 
   try {
-    const res = await fetch(`${API}/recommend-topics`, {
+    const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
@@ -723,7 +924,7 @@ async function sendMessage() {
     addAiMsg(esc(data.topics).replace(/\n/g,'<br>'), true);
   } catch(e) {
     removeLoading();
-    addAiMsg('죄송해요, 잠시 후 다시 시도해주세요.');
+    addAiMsg(`❌ ${e.message || '죄송해요, 잠시 후 다시 시도해주세요.'}`);
   }
 }
 
@@ -828,7 +1029,7 @@ async function evaluateImage(event) {
   formData.append('image', file);
 
   try {
-    const res = await fetch(`${API}/evaluate-image`, { method:'POST', body:formData });
+    const res = await apiFetch(`${API}/evaluate-image`, { method:'POST', body:formData });
     const data = await res.json();
     removeLoading();
     addAiMsg('이미지 평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인하세요 📊', true);
@@ -836,7 +1037,7 @@ async function evaluateImage(event) {
     showToast('✅ 이미지 평가 완료!');
   } catch(e) {
     removeLoading();
-    addAiMsg('이미지 평가 중 오류가 발생했어요.');
+    addAiMsg(`❌ ${e.message || '이미지 평가 중 오류가 발생했어요.'}`);
   }
   event.target.value = '';
 }
