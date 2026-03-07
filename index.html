@@ -420,17 +420,26 @@ function resumeSession(subject, career, topic, topics) {
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career || studentName;
 
+  // 채팅 탭으로 강제 전환
+  document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', i===0));
+  document.getElementById('panelChat').style.display = 'flex';
+  document.getElementById('panelResources').style.display = 'none';
+  document.getElementById('panelEval').style.display = 'none';
+  const rightPanel = document.querySelector('.right-panel');
+  rightPanel.classList.remove('fullwidth');
+
   if(topic) {
     updateStep(5);
-    // 주제 요약 패널 표시 (DB에서 세부내용 없으니 title만)
     renderTopicSummary({ title: topic, details: {} });
     addAiMsg(`좋아요! <strong>${esc(topic)}</strong> 주제로 이어서 진행할게요 😊<br><br>완성본이 준비되면 평가받으세요!`, true);
     if(!document.querySelector('.submission-textarea')) showEvalInput();
   } else if(topics) {
+    rightPanel.style.display = 'none';
     updateStep(4);
     addAiMsg(`지난번에 추천받은 주제 중에서 골라주세요! 🎯`, true);
     showTopicCards(topics);
   } else {
+    rightPanel.style.display = 'none';
     updateStep(3);
     addAiMsg(`주제부터 다시 추천받을게요!`, true);
     requestTopics();
