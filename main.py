@@ -3,23 +3,28 @@ import uuid
 import glob
 from dataclasses import dataclass, field
 from typing import Optional
+from datetime import datetime
 
 import google.generativeai as genai
-from fastapi import FastAPI, UploadFile, File, Form
+from supabase import create_client, Client
+from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # ───────────────────────────────────────
-# 설정
+# 설정 (Render 환경변수)
 # ───────────────────────────────────────
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=GEMINI_API_KEY)
+GEMINI_API_KEY  = os.environ.get("GEMINI_API_KEY")
+SUPABASE_URL    = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY    = os.environ.get("SUPABASE_KEY")
 
+genai.configure(api_key=GEMINI_API_KEY)
 MODEL = "gemini-2.5-flash-preview-05-20"
 
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
+
 # ───────────────────────────────────────
-# data/ 폴더 전체 읽기 (벡터스토어 대신)
-# Gemini 2.5는 컨텍스트 창이 100만 토큰이라 파일 통째로 넣어도 됨
+# data/ 폴더 읽기
 # ───────────────────────────────────────
 def load_knowledge_base() -> str:
     knowledge = ""
@@ -33,22 +38,26 @@ def load_knowledge_base() -> str:
         knowledge += f"\n\n=== {filename} ===\n{content}"
     return knowledge.strip() or "지식 데이터 없음"
 
-# 서버 시작 시 딱 1번만 로드 (매 요청마다 읽지 않음)
 KNOWLEDGE_BASE = load_knowledge_base()
 print(f"✅ 지식 데이터 로드 완료 ({len(KNOWLEDGE_BASE)} 글자)")
 
 # ───────────────────────────────────────
-# 세션 관리
+# 세션 (서버 메모리 - 요청간 임시 저장)
 # ───────────────────────────────────────
 @dataclass
 class StudentSession:
     session_id: str
+    student_code: Optional[str] = None
+    student_name: Optional[str] = None
     assessment_info: Optional[str] = None
     grade: Optional[str] = None
     subject: Optional[str] = None
     desired_career: Optional[str] = None
     step: str = "init"
     selected_topic: Optional[str] = None
+    recommended_topics: Optional[str] = None
+    recommended_resources: Optional[str] = None
+    evaluation_result: Optional[str] = None
     history: list = field(default_factory=list)
 
 _sessions: dict = {}
@@ -58,26 +67,67 @@ def get_or_create_session(session_id: str) -> StudentSession:
         _sessions[session_id] = StudentSession(session_id=session_id)
     return _sessions[session_id]
 
-def clear_session(session_id: str):
-    _sessions.pop(session_id, None)
-
 def add_history(session: StudentSession, role: str, text: str):
-    """대화 이력 추가 - 최근 20개만 유지 (비용 절감)"""
     session.history.append({"role": role, "parts": [text]})
     if len(session.history) > 20:
         session.history = session.history[-20:]
 
 # ───────────────────────────────────────
-# Gemini 호출 헬퍼
+# Supabase 헬퍼
+# ───────────────────────────────────────
+def db_get_student(code: str) -> Optional[dict]:
+    """students 테이블에서 코드로 학생 조회"""
+    try:
+        res = supabase.table("students").select("*").eq("code", code.upper()).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"학생 조회 오류: {e}")
+        return None
+
+def db_get_conversation(code: str) -> Optional[dict]:
+    """conversations 테이블에서 학생의 마지막 대화 조회"""
+    try:
+        res = supabase.table("conversations").select("*").eq("student_code", code.upper()).order("updated_at", desc=True).limit(1).execute()
+        return res.data[0] if res.data else None
+    except Exception as e:
+        print(f"대화 조회 오류: {e}")
+        return None
+
+def db_save_conversation(session: StudentSession):
+    """conversations 테이블에 upsert (있으면 업데이트, 없으면 삽입)"""
+    try:
+        now = datetime.utcnow().isoformat()
+        data = {
+            "student_code":    session.student_code,
+            "student_name":    session.student_name,
+            "subject":         session.subject or "",
+            "grade":           session.grade or "",
+            "career":          session.desired_career or "",
+            "assessment_info": session.assessment_info or "",
+            "selected_topic":  session.selected_topic or "",
+            "topics":          session.recommended_topics or "",
+            "resources":       session.recommended_resources or "",
+            "evaluation":      session.evaluation_result or "",
+            "updated_at":      now,
+        }
+        # 기존 행 있으면 업데이트, 없으면 삽입
+        existing = db_get_conversation(session.student_code)
+        if existing:
+            supabase.table("conversations").update(data).eq("student_code", session.student_code.upper()).execute()
+        else:
+            supabase.table("conversations").insert(data).execute()
+    except Exception as e:
+        print(f"대화 저장 오류: {e}")
+
+# ───────────────────────────────────────
+# Gemini 호출
 # ───────────────────────────────────────
 def call_text(system: str, user_msg: str, history: list = None) -> str:
-    """텍스트 전용 - 대화 이력 포함"""
     model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
     chat = model.start_chat(history=history or [])
     return chat.send_message(user_msg).text
 
 def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str) -> str:
-    """이미지 포함 멀티모달 호출"""
     model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
     return model.generate_content([
         {"mime_type": mime_type, "data": image_bytes},
@@ -85,7 +135,7 @@ def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str) ->
     ]).text
 
 # ───────────────────────────────────────
-# FastAPI 앱
+# FastAPI
 # ───────────────────────────────────────
 app = FastAPI(title="수행평가 AI 코치")
 
@@ -96,39 +146,90 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ───────────────────────────────────────
-# 0. 기본
-# ───────────────────────────────────────
 @app.get("/")
 def root():
-    return {"status": "ok", "message": "수행평가 AI 코치 (Gemini 2.5 Flash) 실행 중!"}
+    return {"status": "ok", "message": "수행평가 AI 코치 (Gemini 2.5 Flash + Supabase) 실행 중!"}
 
+# ───────────────────────────────────────
+# 로그인
+# ───────────────────────────────────────
+class LoginRequest(BaseModel):
+    code: str
+    name: str
+
+@app.post("/login")
+def login(req: LoginRequest):
+    code = req.code.strip().upper()
+    name = req.name.strip()
+
+    # students 테이블에서 확인
+    student = db_get_student(code)
+    if not student:
+        raise HTTPException(status_code=401, detail="등록되지 않은 코드예요. 선생님께 문의하세요.")
+    if student["name"].strip() != name:
+        raise HTTPException(status_code=401, detail="이름이 일치하지 않아요. 다시 확인해주세요.")
+
+    # 세션 생성
+    session_id = str(uuid.uuid4())
+    session = get_or_create_session(session_id)
+    session.student_code = code
+    session.student_name = name
+
+    # 이전 대화 불러오기
+    prev = db_get_conversation(code)
+    if prev:
+        # 세션에 이전 상태 복원
+        session.subject           = prev.get("subject", "")
+        session.grade             = prev.get("grade", "")
+        session.desired_career    = prev.get("career", "")
+        session.assessment_info   = prev.get("assessment_info", "")
+        session.selected_topic    = prev.get("selected_topic", "")
+        session.recommended_topics    = prev.get("topics", "")
+        session.recommended_resources = prev.get("resources", "")
+        session.evaluation_result = prev.get("evaluation", "")
+
+    _sessions[session_id] = session
+
+    return {
+        "status": "success",
+        "session_id": session_id,
+        "name": name,
+        "code": code,
+        "previous": prev,
+        "message": f"안녕하세요, {name}님! 👋"
+    }
+
+# ───────────────────────────────────────
+# 세션 상태
+# ───────────────────────────────────────
 @app.post("/session/create")
 def create_session():
     session_id = str(uuid.uuid4())
     get_or_create_session(session_id)
-    return {"session_id": session_id, "message": "세션 생성 완료"}
+    return {"session_id": session_id}
 
 @app.delete("/session/{session_id}")
 def delete_session(session_id: str):
-    clear_session(session_id)
+    _sessions.pop(session_id, None)
     return {"message": "세션 삭제 완료"}
 
 @app.get("/session/{session_id}/status")
 def get_session_status(session_id: str):
     s = get_or_create_session(session_id)
     return {
-        "session_id": session_id,
-        "step": s.step,
+        "session_id":   session_id,
+        "step":         s.step,
+        "student_name": s.student_name,
+        "student_code": s.student_code,
         "has_assessment": s.assessment_info is not None,
-        "grade": s.grade,
-        "subject": s.subject,
+        "grade":        s.grade,
+        "subject":      s.subject,
         "desired_career": s.desired_career,
         "selected_topic": s.selected_topic,
     }
 
 # ───────────────────────────────────────
-# 1번: 수행평가 안내문 이미지 분석
+# 1번: 안내문 분석
 # ───────────────────────────────────────
 @app.post("/analyze-assessment")
 async def analyze_assessment(
@@ -136,8 +237,6 @@ async def analyze_assessment(
     image: UploadFile = File(...),
 ):
     session = get_or_create_session(session_id)
-
-    # 이미 분석된 경우 재호출 안 함 (비용 절감)
     if session.assessment_info:
         return {"status": "cached", "assessment_info": session.assessment_info}
 
@@ -147,9 +246,7 @@ async def analyze_assessment(
 
     system = """
 당신은 고등학교 수행평가 안내문 분석 전문가입니다.
-이미지에서 수행평가 핵심 정보를 정확히 추출하세요.
-
-반드시 아래 형식으로 답하세요:
+반드시 아래 형식으로 정확히 추출하세요:
 
 [수행평가 기본 정보]
 - 교과/과목:
@@ -169,15 +266,17 @@ async def analyze_assessment(
 확인 안 되는 항목은 '정보 없음'으로 표시하세요.
 """.strip()
 
-    result = call_vision(system, image_bytes, mime_type, "위 수행평가 안내문의 모든 정보를 추출해주세요.")
-
+    result = call_vision(system, image_bytes, mime_type, "수행평가 안내문의 모든 정보를 추출해주세요.")
     session.assessment_info = result
     session.step = "assessed"
     add_history(session, "user", "수행평가 안내문 분석 요청")
     add_history(session, "model", result)
     _sessions[session_id] = session
 
-    return {"status": "success", "assessment_info": result, "message": "안내문 분석 완료!"}
+    if session.student_code:
+        db_save_conversation(session)
+
+    return {"status": "success", "assessment_info": result}
 
 # ───────────────────────────────────────
 # 2번: 주제 추천
@@ -192,8 +291,8 @@ class StudentInfoRequest(BaseModel):
 @app.post("/recommend-topics")
 def recommend_topics(req: StudentInfoRequest):
     session = get_or_create_session(req.session_id)
-    session.grade = req.grade
-    session.subject = req.subject
+    session.grade          = req.grade
+    session.subject        = req.subject
     session.desired_career = req.desired_career
     if req.assessment_info:
         session.assessment_info = req.assessment_info
@@ -203,16 +302,10 @@ def recommend_topics(req: StudentInfoRequest):
 
     system = f"""
 당신은 고등학교 수행평가 주제 추천 전문가입니다.
-아래 지식 데이터(교육과정/우수사례/추천자료)를 참고해서 학생 맞춤 주제를 추천하세요.
+아래 지식 데이터를 참고해서 학생 맞춤 주제를 추천하세요.
 
 [지식 데이터]
 {KNOWLEDGE_BASE}
-
-주제 추천 원칙:
-1. 평가 기준을 모두 충족할 수 있는 주제
-2. 학생 희망 진로와 자연스럽게 연결되는 주제
-3. 고등학생이 실제로 수행 가능한 난이도
-4. 창의적이면서 채점에 유리한 방향
 
 반드시 아래 형식으로 3개 추천:
 
@@ -245,10 +338,14 @@ def recommend_topics(req: StudentInfoRequest):
 """
 
     result = call_text(system, user_msg, session.history)
+    session.recommended_topics = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
-    session.step = "topic_selected"
+    session.step = "topic_recommended"
     _sessions[req.session_id] = session
+
+    if session.student_code:
+        db_save_conversation(session)
 
     return {"status": "success", "topics": result}
 
@@ -305,9 +402,13 @@ def find_resources(req: ResourceRequest):
 """
 
     result = call_text(system, user_msg, session.history)
+    session.recommended_resources = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
     _sessions[req.session_id] = session
+
+    if session.student_code:
+        db_save_conversation(session)
 
     return {"status": "success", "resources": result}
 
@@ -329,12 +430,11 @@ def evaluate_text(
 [지식 데이터]
 {KNOWLEDGE_BASE}
 
-각 평가 항목마다 아래 형식으로 작성:
-
+각 평가 항목마다:
 ## [항목명] ★★★★☆
-✅ 잘한 점: (구체적 근거와 함께)
-⚠️ 아쉬운 점: (부족한 부분 명확히)
-📌 보완할 점: (점수 올리기 위한 구체적 행동)
+✅ 잘한 점: (구체적 근거)
+⚠️ 아쉬운 점: (부족한 부분)
+📌 보완할 점: (구체적 행동)
 
 마지막에:
 ## 종합 평가
@@ -352,14 +452,18 @@ def evaluate_text(
 [학생 제출물]
 {submission_text}
 
-평가 기준에 따라 항목별로 평가해주세요.
+항목별로 평가해주세요.
 """
 
     result = call_text(system, user_msg, session.history)
+    session.evaluation_result = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
     session.step = "evaluated"
     _sessions[session_id] = session
+
+    if session.student_code:
+        db_save_conversation(session)
 
     return {"status": "success", "evaluation": result}
 
@@ -380,7 +484,6 @@ async def evaluate_image(
 
     system = f"""
 당신은 고등학교 수행평가 채점 전문가입니다.
-학생이 제출한 수행평가 이미지를 보고 평가하세요.
 
 [평가 기준]
 {assessment_text}
@@ -388,7 +491,7 @@ async def evaluate_image(
 [선택 주제] {session.selected_topic or '미입력'}
 [희망 진로] {session.desired_career or '미입력'}
 
-각 평가 항목마다:
+각 항목마다:
 ## [항목명] ★★★★☆
 ✅ 잘한 점:
 ⚠️ 아쉬운 점:
@@ -400,13 +503,13 @@ async def evaluate_image(
 총평:
 """.strip()
 
-    result = call_vision(
-        system, image_bytes, mime_type,
-        "위 이미지가 학생의 수행평가 제출물입니다. 평가 기준에 따라 항목별로 평가해주세요."
-    )
-
+    result = call_vision(system, image_bytes, mime_type, "이 이미지가 학생 수행평가 제출물입니다. 평가해주세요.")
+    session.evaluation_result = result
     session.step = "evaluated"
     _sessions[session_id] = session
+
+    if session.student_code:
+        db_save_conversation(session)
 
     return {"status": "success", "evaluation": result}
 
