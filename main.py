@@ -19,7 +19,7 @@ SUPABASE_URL    = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY    = os.environ.get("SUPABASE_KEY")
 
 genai.configure(api_key=GEMINI_API_KEY)
-MODEL = "gemini-2.5-flash-lite"
+MODEL = "gemini-2.5-flash"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
@@ -104,6 +104,7 @@ class StudentSession:
     previous_topic: Optional[str] = None   # ★ 이전에 했던 주제
     step: str = "init"
     selected_topic: Optional[str] = None
+    selected_topic_detail: Optional[str] = None
     recommended_topics: Optional[str] = None
     recommended_resources: Optional[str] = None
     evaluation_result: Optional[str] = None
@@ -177,8 +178,9 @@ def db_save_conversation(session: StudentSession):
             "grade":           session.grade or "",
             "career":          session.desired_career or "",
             "assessment_info": session.assessment_info or "",
-            "selected_topic":  session.selected_topic or "",
-            "topics":          session.recommended_topics or "",
+            "selected_topic":        session.selected_topic or "",
+            "selected_topic_detail": session.selected_topic_detail or "",
+            "topics":                session.recommended_topics or "",
             "resources":       session.recommended_resources or "",
             "evaluation":      session.evaluation_result or "",
             "updated_at":      now,
@@ -264,7 +266,8 @@ def login(req: LoginRequest):
         session.grade             = prev.get("grade", "")
         session.desired_career    = prev.get("career", "")
         session.assessment_info   = prev.get("assessment_info", "")
-        session.selected_topic    = prev.get("selected_topic", "")
+        session.selected_topic        = prev.get("selected_topic", "")
+        session.selected_topic_detail = prev.get("selected_topic_detail", "")
         session.recommended_topics    = prev.get("topics", "")
         session.recommended_resources = prev.get("resources", "")
         session.evaluation_result = prev.get("evaluation", "")
@@ -482,11 +485,13 @@ def recommend_topics(req: StudentInfoRequest):
 class ResourceRequest(BaseModel):
     session_id: str
     selected_topic: str
+    selected_topic_detail: Optional[str] = None
 
 @app.post("/find-resources")
 def find_resources(req: ResourceRequest):
     session = get_or_create_session(req.session_id)
     session.selected_topic = req.selected_topic
+    session.selected_topic_detail = req.selected_topic_detail or ""
     _sessions[req.session_id] = session
 
     system = f"""
