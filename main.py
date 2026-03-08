@@ -648,9 +648,13 @@ def find_resources(req: ResourceRequest):
 학년: {session.grade or '미입력'}
 이전에 했던 주제: {session.previous_topic or '없음'}
 
-이 주제로 수행평가 작성할 때 활용할 수 있는 자료를 추천해주세요.
-지식 데이터에서 먼저 찾고, 3개를 못 채우면 반드시 Google 검색 도구를 실행해서 실제 존재하는 자료를 찾아 추가하세요.
-추후 심화 탐구로 이어질 수 있는 자료를 우선 추천해주세요.
+다음 순서로 자료를 찾아 추천해주세요:
+1. 지식 데이터에서 주제에 맞는 자료를 먼저 확인한다
+2. 지식 데이터에 없거나 부족하면, 아래 검색어로 Google 검색 도구를 반드시 실행한다:
+   - "{req.selected_topic} 도서 추천"
+   - "{req.selected_topic} TED Talk"
+   - "{req.selected_topic} 영어 기사 site:time.com OR site:nationalgeographic.com OR site:ted.com"
+3. 검색 결과에서 실제 존재가 확인된 자료만 추천한다. 검색하지 않고 지어내는 것은 절대 금지
 """
 
     result = call_text_with_search(system, user_msg, student_code=session.student_code)
