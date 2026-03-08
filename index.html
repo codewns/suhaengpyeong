@@ -906,8 +906,8 @@ function openTopicModal(idx) {
   if(!t) return;
 
   const detailRows = Object.entries(t.details).map(([k,v]) =>
-    `<div style="margin-bottom:12px;">
-      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(stripMarkdown(k))}</div>
+    `<div style="margin-bottom:18px;">
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:5px;">${esc(stripMarkdown(k))}</div>
       <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(stripMarkdown(v)).replace(/\n/g,'<br>')}</div>
     </div>`
   ).join('');
