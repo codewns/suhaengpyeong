@@ -1050,6 +1050,8 @@ function renderResources(text, topic) {
     }
   }
   if(cur) cards.push(cur);
+  // 내용 없는 빈 카드 제거
+  cards = cards.filter(c => Object.keys(c.items).length > 0 || c.title.trim().length > 0);
 
   if(cards.length > 0) {
     cards.forEach((card, i) => {
