@@ -210,6 +210,22 @@ def call_text(system: str, user_msg: str, history: list = None, student_code: st
     chat = model.start_chat(history=history or [])
     return chat.send_message(user_msg).text
 
+def call_text_with_search(system: str, user_msg: str, student_code: str = None) -> str:
+    """Google Search 그라운딩을 활용한 Gemini 호출"""
+    if student_code:
+        allowed, count, limit = db_check_call_limit(student_code)
+        if not allowed:
+            raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
+        db_increment_call_count(student_code)
+    search_tool = {"google_search": {}}
+    model = genai.GenerativeModel(
+        model_name=MODEL,
+        system_instruction=system,
+        tools=[search_tool]
+    )
+    response = model.generate_content(user_msg)
+    return response.text
+
 def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, student_code: str = None) -> str:
     if student_code:
         allowed, count, limit = db_check_call_limit(student_code)
@@ -528,16 +544,29 @@ def find_resources(req: ResourceRequest):
 {CORE_PRINCIPLES}
 
 당신은 수행평가 자료 추천 전문가입니다.
-아래 지식 데이터에서 주제에 맞는 자료를 찾아 추천하세요.
 
-[지식 데이터]
+[지식 데이터 - 최우선 참고]
 {KNOWLEDGE_BASE}
+
+자료 추천 우선순위 (반드시 준수):
+1순위: 위 지식 데이터에 명시된 자료 (도서, TED Talks, TIME/National Geographic 기사 등)
+2순위: Google 검색으로 실제 존재가 확인된 자료만 사용
+
+[절대 금지 - 가장 중요한 규칙]
+- 실제로 존재하지 않는 자료를 지어내는 것은 절대 금지
+- 제목, 저자, 출처를 임의로 만들어내는 것은 절대 금지
+- "~에 관한 연구", "~저널의 논문" 등 막연한 자료를 꾸며내는 것은 절대 금지
+- 검색으로 확인되지 않은 자료는 절대 추천하지 않는다
+- 확실하지 않으면 3개를 채우려 하지 말고 확인된 것만 추천한다
+- 3개를 못 채우는 것이 가짜 자료를 추천하는 것보다 훨씬 낫다
 
 출력 규칙 (반드시 준수):
 1. *, **, ##, ### 같은 마크다운 기호를 절대 사용하지 않는다.
 2. 영어 단어를 괄호 안에 넣지 않는다. 순수 한국어로만 작성한다.
 3. 원칙 번호나 내부 지침 내용을 절대 출력하지 않는다.
 4. 항목은 숫자 번호로 구분한다.
+5. 실제로 존재하는 자료만 추천한다. 확인되지 않으면 "적합한 자료를 찾지 못했어요"라고 한다.
+6. 3개가 끝나면 추가 내용을 절대 출력하지 않는다.
 
 반드시 아래 형식으로 최대 3개 추천:
 
@@ -577,10 +606,11 @@ def find_resources(req: ResourceRequest):
 이전에 했던 주제: {session.previous_topic or '없음'}
 
 이 주제로 수행평가 작성할 때 활용할 수 있는 자료를 추천해주세요.
+지식 데이터에서 먼저 찾고, 없으면 Google 검색으로 실제 존재하는 자료를 찾아 추천해주세요.
 추후 심화 탐구로 이어질 수 있는 자료를 우선 추천해주세요.
 """
 
-    result = call_text(system, user_msg, session.history, student_code=session.student_code)
+    result = call_text_with_search(system, user_msg, student_code=session.student_code)
     session.recommended_resources = result
     add_history(session, "user", user_msg)
     add_history(session, "model", result)
