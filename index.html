@@ -871,6 +871,10 @@ function parseTopics(text) {
         details[curKey] += ' ' + line.trim();
       }
     }
+    // 각 값 끝의 --- 및 공백 제거
+    for(const k of Object.keys(details)) {
+      details[k] = details[k].replace(/\s*---+\s*$/g,'').trim();
+    }
     topics.push({ title, details, raw: block });
     if(topics.length >= 3) break; // 3개 초과 내용 무시
   }
