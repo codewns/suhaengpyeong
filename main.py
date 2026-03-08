@@ -171,6 +171,10 @@ def db_get_conversation(code: str) -> Optional[dict]:
 def db_save_conversation(session: StudentSession):
     try:
         now = datetime.utcnow().isoformat()
+        # selected_topic_detail을 selected_topic에 |||로 구분해 같이 저장
+        topic_combined = session.selected_topic or ""
+        if session.selected_topic_detail:
+            topic_combined = (session.selected_topic or "") + "|||" + session.selected_topic_detail
         data = {
             "student_code":    session.student_code,
             "student_name":    session.student_name,
@@ -178,9 +182,8 @@ def db_save_conversation(session: StudentSession):
             "grade":           session.grade or "",
             "career":          session.desired_career or "",
             "assessment_info": session.assessment_info or "",
-            "selected_topic":        session.selected_topic or "",
-            "selected_topic_detail": session.selected_topic_detail or "",
-            "topics":                session.recommended_topics or "",
+            "selected_topic":  topic_combined,
+            "topics":          session.recommended_topics or "",
             "resources":       session.recommended_resources or "",
             "evaluation":      session.evaluation_result or "",
             "updated_at":      now,
@@ -266,13 +269,31 @@ def login(req: LoginRequest):
         session.grade             = prev.get("grade", "")
         session.desired_career    = prev.get("career", "")
         session.assessment_info   = prev.get("assessment_info", "")
-        session.selected_topic        = prev.get("selected_topic", "")
-        session.selected_topic_detail = prev.get("selected_topic_detail", "")
+        topic_raw = prev.get("selected_topic", "")
+        if "|||" in topic_raw:
+            parts = topic_raw.split("|||", 1)
+            session.selected_topic = parts[0]
+            session.selected_topic_detail = parts[1]
+        else:
+            session.selected_topic = topic_raw
+            session.selected_topic_detail = ""
         session.recommended_topics    = prev.get("topics", "")
         session.recommended_resources = prev.get("resources", "")
         session.evaluation_result = prev.get("evaluation", "")
 
     _sessions[session_id] = session
+
+    # 프론트용 previous 가공 - selected_topic 분리
+    if prev:
+        topic_raw = prev.get("selected_topic", "")
+        if "|||" in topic_raw:
+            parts = topic_raw.split("|||", 1)
+            prev = dict(prev)
+            prev["selected_topic"] = parts[0]
+            prev["selected_topic_detail"] = parts[1]
+        else:
+            prev = dict(prev)
+            prev["selected_topic_detail"] = ""
 
     return {
         "status": "success",
