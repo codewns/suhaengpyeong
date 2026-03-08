@@ -5,7 +5,8 @@ from dataclasses import dataclass, field
 from typing import Optional
 from datetime import datetime
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 from supabase import create_client, Client
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,7 +19,7 @@ GEMINI_API_KEY  = os.environ.get("GEMINI_API_KEY")
 SUPABASE_URL    = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY    = os.environ.get("SUPABASE_KEY")
 
-genai.configure(api_key=GEMINI_API_KEY)
+client_genai = genai.Client(api_key=GEMINI_API_KEY)
 MODEL = "gemini-2.5-flash-lite"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
@@ -206,9 +207,18 @@ def call_text(system: str, user_msg: str, history: list = None, student_code: st
         if not allowed:
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
-    model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
-    chat = model.start_chat(history=history or [])
-    return chat.send_message(user_msg).text
+    contents = []
+    for h in (history or []):
+        role = "user" if h.get("role") == "user" else "model"
+        text = h.get("parts", [{}])[0].get("text", "") if h.get("parts") else ""
+        contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
+    contents.append(types.Content(role="user", parts=[types.Part(text=user_msg)]))
+    response = client_genai.models.generate_content(
+        model=MODEL,
+        contents=contents,
+        config=types.GenerateContentConfig(system_instruction=system)
+    )
+    return response.text
 
 def call_text_with_search(system: str, user_msg: str, student_code: str = None) -> str:
     """Google Search 그라운딩을 활용한 Gemini 호출"""
@@ -218,21 +228,24 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
     try:
-        from google.generativeai.types import GenerationConfig
-        search_tool = genai.protos.Tool(
-            google_search_retrieval=genai.protos.GoogleSearchRetrieval()
+        grounding_tool = types.Tool(google_search=types.GoogleSearch())
+        response = client_genai.models.generate_content(
+            model=MODEL,
+            contents=user_msg,
+            config=types.GenerateContentConfig(
+                system_instruction=system,
+                tools=[grounding_tool]
+            )
         )
-        model = genai.GenerativeModel(
-            model_name=MODEL,
-            system_instruction=system,
-            tools=[search_tool]
-        )
-        response = model.generate_content(user_msg)
         return response.text
     except Exception as e:
         print(f"검색 호출 오류, 일반 호출로 대체: {e}")
-        model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
-        return model.generate_content(user_msg).text
+        response = client_genai.models.generate_content(
+            model=MODEL,
+            contents=user_msg,
+            config=types.GenerateContentConfig(system_instruction=system)
+        )
+        return response.text
 
 def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, student_code: str = None) -> str:
     if student_code:
@@ -240,11 +253,15 @@ def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, st
         if not allowed:
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
-    model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
-    return model.generate_content([
-        {"mime_type": mime_type, "data": image_bytes},
-        prompt,
-    ]).text
+    response = client_genai.models.generate_content(
+        model=MODEL,
+        contents=[
+            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_bytes)),
+            types.Part(text=prompt)
+        ],
+        config=types.GenerateContentConfig(system_instruction=system)
+    )
+    return response.text
 
 
 # ───────────────────────────────────────
