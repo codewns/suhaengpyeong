@@ -487,6 +487,11 @@ function updateCallUsage(count, limit) {
 
 function showWelcome(name) {
   document.getElementById('chatMessages').innerHTML = '';
+  // 선택한 주제 패널 숨기기
+  const topicSummary = document.getElementById('panelTopicSummary');
+  if(topicSummary) topicSummary.style.display = 'none';
+  document.querySelector('.right-panel').style.display = 'none';
+  selectedTopic = null;
   addAiMsg(`안녕하세요, <strong>${name}</strong>님! 👋<br><br>
     수행평가를 도와드릴게요!<br>
     먼저 <strong>과목</strong>과 <strong>같은 과목에서 이전에 했던 주제</strong>를 알려주세요 📝`, true);
