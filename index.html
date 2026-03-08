@@ -1011,7 +1011,7 @@ function stripMarkdown(text) {
 }
 
 function renderResources(text, topic) {
-  text = stripMarkdown(text);
+  // stripMarkdown 전에 먼저 파싱 (--- 구분선 보존)
   let html = `
     <div style="margin-bottom:16px;">
       <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">선택 주제</div>
@@ -1023,7 +1023,7 @@ function renderResources(text, topic) {
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">`;
 
-  // 줄 단위로 자료 블록 파싱
+  // 줄 단위로 자료 블록 파싱 (마크다운 제거 전)
   const lines = text.split('\n');
   let cards = [];
   let cur = null;
@@ -1031,14 +1031,17 @@ function renderResources(text, topic) {
     const headerMatch = line.match(/^(?:자료|추천)\s*\d+\s*[:：.]?\s*(.*)$/);
     if(headerMatch) {
       if(cur) cards.push(cur);
-      cur = { title: headerMatch[1].trim(), items: {} , lastKey: '' };
+      cur = { title: headerMatch[1].trim(), items: {}, lastKey: '' };
     } else if(cur) {
       const numMatch = line.trim().match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
       if(numMatch) {
         cur.lastKey = numMatch[1].trim();
         cur.items[cur.lastKey] = numMatch[2].trim();
-      } else if(cur.lastKey && line.trim() && !line.match(/^⚠|^주의/)) {
+      } else if(cur.lastKey && line.trim() && !line.match(/^[-—]{2,}$/) && !line.match(/^[⚠️]|^주의/)) {
         cur.items[cur.lastKey] += ' ' + line.trim();
+      } else if(line.match(/^[-—]{3,}$/)) {
+        // --- 구분선이면 다음 자료 시작 신호로 처리
+        if(cur) { cards.push(cur); cur = null; }
       }
     }
   }
@@ -1046,29 +1049,22 @@ function renderResources(text, topic) {
 
   if(cards.length > 0) {
     cards.forEach((card, i) => {
-      const itemsHtml = Object.entries(card.items).map(([k,v]) =>
-        `<div style="margin-bottom:8px;">
-          <span style="font-size:11px;font-weight:700;color:var(--primary);">${esc(k)}</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:2px;">${esc(v)}</div>
-        </div>`
-      ).join('');
-      // 제목은 items에서 '제목' 키로 찾기
-      const titleText = card.items['제목'] || card.title || '';
+      const titleText = stripMarkdown(card.items['제목'] || card.title || '');
       const bodyItems = Object.entries(card.items).filter(([k]) => k !== '제목');
-      const bodyHtml = bodyItems.map(([k,v]) =>
-        `<div style="margin-bottom:8px;">
-          <span style="font-size:11px;font-weight:700;color:var(--primary);">${esc(k)}</span>
-          <div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:2px;">${esc(v)}</div>
+      const bodyHtml = bodyItems.map(([k, v]) =>
+        `<div style="margin-bottom:10px;">
+          <span style="font-size:11px;font-weight:700;color:var(--primary);">${esc(stripMarkdown(k))}</span>
+          <div style="font-size:13px;color:var(--text);line-height:1.6;margin-top:2px;">${esc(stripMarkdown(v))}</div>
         </div>`
       ).join('');
       html += `<div class="resource-card">
         <span class="resource-badge">자료 ${i+1}</span>
         ${titleText ? `<div class="resource-title" style="margin:8px 0;">${esc(titleText)}</div>` : ''}
-        <div style="margin-top:8px;">${bodyHtml || itemsHtml}</div>
+        <div style="margin-top:8px;">${bodyHtml}</div>
       </div>`;
     });
   } else {
-    html += `<div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(text).replace(/\n/g,'<br>')}</div>`;
+    html += `<div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(text)).replace(/\n/g,'<br>')}</div>`;
   }
   document.getElementById('resourceContent').innerHTML = html;
 }
