@@ -552,6 +552,20 @@ def recommend_topics(req: StudentInfoRequest):
 [수행평가 안내문]
 {assessment_text}
 
+[선정 근거 작성 방법 - 반드시 준수]
+수행평가 안내문을 먼저 꼼꼼히 읽고, 아래 기준으로 판단하라:
+
+경우 1 - 안내문에 번호가 매겨진 질문 목록이 있고 학생이 하나를 골라야 하는 경우:
+→ 안내문에서 해당 질문을 직접 찾아 "안내문에 제시된 N가지 질문 중 N번 질문 '(질문 내용을 그대로 인용)'을 선택해 이 주제를 선정했습니다." 형식으로 작성
+
+경우 2 - 안내문에 자료/도서/영상 목록이 있고 하나를 골라야 하는 경우:
+→ "안내문에서 제시된 자료 중 '(자료명)'을 선택해 이 주제를 선정했습니다." 형식으로 작성
+
+경우 3 - 위 두 경우가 아닌 경우:
+→ 선정 근거 항목 완전 생략
+
+평가 기준, 채점 기준, 점수 배분 등은 선정 근거가 절대 아니다.
+
 핵심 원칙을 최우선으로 지키면서 맞춤 주제 3개를 추천해주세요.
 특히 이전 주제({previous_topic})가 있다면 그것을 심화·확장하는 방향을 최우선으로 고려하세요.
 """
@@ -646,13 +660,15 @@ def find_resources(req: ResourceRequest):
 희망 진로: {session.desired_career or '미입력'}
 과목: {session.subject or '미입력'}
 학년: {session.grade or '미입력'}
+이전에 했던 주제: {session.previous_topic or '없음'}
 
-지금 바로 Google 검색 도구로 아래 3가지를 검색하고, 검색 결과에 실제로 나온 자료만 추천해주세요:
-1. "{req.selected_topic} book recommendation"
-2. "{req.selected_topic} TED Talk"
-3. "{req.selected_topic} article english"
-
-검색 결과에 없는 자료는 절대 추천하지 마세요. 검색 결과에 나온 제목과 출처를 그대로 사용하세요.
+아래 순서로 자료를 찾아 추천해주세요:
+1. 지식 데이터에서 주제에 맞는 자료를 먼저 확인한다
+2. 지식 데이터로 3개를 채우지 못하면, Google 검색 도구로 아래를 검색해서 실제 결과에 나온 자료만 추가한다:
+   - "{req.selected_topic} book recommendation"
+   - "{req.selected_topic} TED Talk"
+   - "{req.selected_topic} english article"
+3. 검색 결과에 실제로 나온 제목과 출처만 사용한다. 검색 결과에 없는 자료는 절대 추천하지 않는다
 """
 
     result = call_text_with_search(system, user_msg, student_code=session.student_code)
