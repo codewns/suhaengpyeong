@@ -324,8 +324,13 @@ def get_session_status(session_id: str):
 async def analyze_assessment(
     session_id: str = Form(...),
     image: UploadFile = File(...),
+    subject: str = Form(default=""),
+    career: str = Form(default=""),
 ):
     session = get_or_create_session(session_id)
+    if subject: session.subject = subject
+    if career: session.desired_career = career
+    session.grade = "고등학생"
 
     image_bytes = await image.read()
     ext = image.filename.split(".")[-1].lower()
@@ -430,6 +435,7 @@ def recommend_topics(req: StudentInfoRequest):
 반드시 아래 형식으로 3개 추천:
 
 추천 1: (구체적인 한국어 주제명)
+0. 선정 근거: (수행평가 안내문에서 어떤 질문이나 항목을 선택해 이 주제를 선정했는지 한 문장으로 설명. 특정 질문이나 조건이 없으면 이 항목 생략)
 1. 핵심 내용: (이 주제에서 탐구할 내용을 2-3문장으로 설명)
 2. 이전 주제와의 연결: (이전 주제가 있다면 어떻게 심화되는지. 없으면 이 항목 생략)
 3. 추후 심화 방향: (~에 흥미를 느껴 ~을 탐구했다. 이 주제는 ~와 연결되며, 이후 ~한 활동으로 심화할 계획이다. 형식으로 한국어로만 작성)
@@ -437,6 +443,7 @@ def recommend_topics(req: StudentInfoRequest):
 5. 점수 강점: (어떤 평가 항목에서 높은 점수를 받을 수 있는지)
 
 추천 2: (구체적인 한국어 주제명)
+0. 선정 근거:
 1. 핵심 내용:
 2. 이전 주제와의 연결:
 3. 추후 심화 방향:
@@ -444,6 +451,7 @@ def recommend_topics(req: StudentInfoRequest):
 5. 점수 강점:
 
 추천 3: (구체적인 한국어 주제명)
+0. 선정 근거:
 1. 핵심 내용:
 2. 이전 주제와의 연결:
 3. 추후 심화 방향:
