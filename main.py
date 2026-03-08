@@ -210,7 +210,8 @@ def call_text(system: str, user_msg: str, history: list = None, student_code: st
     contents = []
     for h in (history or []):
         role = "user" if h.get("role") == "user" else "model"
-        text = h.get("parts", [{}])[0].get("text", "") if h.get("parts") else ""
+        parts = h.get("parts", [])
+        text = parts[0] if parts and isinstance(parts[0], str) else (parts[0].get("text", "") if parts else "")
         contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
     contents.append(types.Content(role="user", parts=[types.Part(text=user_msg)]))
     response = client_genai.models.generate_content(
