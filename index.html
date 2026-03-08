@@ -1029,8 +1029,8 @@ function renderResources(text, topic) {
   let cur = null;
   for(const line of lines) {
     const headerMatch = line.match(/^(?:자료|추천)\s*\d+\s*[:：.]?\s*(.*)$/);
-    // "1. 제목:" 패턴이면 새 자료 블록 시작
-    const titleLineMatch = line.trim().match(/^1\.\s*제목[:：]\s*(.*)/);
+    // "N. 제목:" 패턴이면 새 자료 블록 시작 (번호 무관)
+    const titleLineMatch = line.trim().match(/^\d+\.\s*제목[:：]\s*(.*)/);
     if(headerMatch) {
       if(cur) cards.push(cur);
       cur = { title: headerMatch[1].trim(), items: {}, lastKey: '' };
