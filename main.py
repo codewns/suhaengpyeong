@@ -646,15 +646,13 @@ def find_resources(req: ResourceRequest):
 희망 진로: {session.desired_career or '미입력'}
 과목: {session.subject or '미입력'}
 학년: {session.grade or '미입력'}
-이전에 했던 주제: {session.previous_topic or '없음'}
 
-다음 순서로 자료를 찾아 추천해주세요:
-1. 지식 데이터에서 주제에 맞는 자료를 먼저 확인한다
-2. 지식 데이터에 없거나 부족하면, 아래 검색어로 Google 검색 도구를 반드시 실행한다:
-   - "{req.selected_topic} 도서 추천"
-   - "{req.selected_topic} TED Talk"
-   - "{req.selected_topic} 영어 기사 site:time.com OR site:nationalgeographic.com OR site:ted.com"
-3. 검색 결과에서 실제 존재가 확인된 자료만 추천한다. 검색하지 않고 지어내는 것은 절대 금지
+지금 바로 Google 검색 도구로 아래 3가지를 검색하고, 검색 결과에 실제로 나온 자료만 추천해주세요:
+1. "{req.selected_topic} book recommendation"
+2. "{req.selected_topic} TED Talk"
+3. "{req.selected_topic} article english"
+
+검색 결과에 없는 자료는 절대 추천하지 마세요. 검색 결과에 나온 제목과 출처를 그대로 사용하세요.
 """
 
     result = call_text_with_search(system, user_msg, student_code=session.student_code)
