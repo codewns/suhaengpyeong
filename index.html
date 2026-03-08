@@ -1029,9 +1029,14 @@ function renderResources(text, topic) {
   let cur = null;
   for(const line of lines) {
     const headerMatch = line.match(/^(?:자료|추천)\s*\d+\s*[:：.]?\s*(.*)$/);
+    // "1. 제목:" 패턴이면 새 자료 블록 시작
+    const titleLineMatch = line.trim().match(/^1\.\s*제목[:：]\s*(.*)/);
     if(headerMatch) {
       if(cur) cards.push(cur);
       cur = { title: headerMatch[1].trim(), items: {}, lastKey: '' };
+    } else if(titleLineMatch) {
+      if(cur) cards.push(cur);
+      cur = { title: '', items: { '제목': titleLineMatch[1].trim() }, lastKey: '제목' };
     } else if(cur) {
       const numMatch = line.trim().match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
       if(numMatch) {
@@ -1040,7 +1045,6 @@ function renderResources(text, topic) {
       } else if(cur.lastKey && line.trim() && !line.match(/^[-—]{2,}$/) && !line.match(/^[⚠️]|^주의/)) {
         cur.items[cur.lastKey] += ' ' + line.trim();
       } else if(line.match(/^[-—]{3,}$/)) {
-        // --- 구분선이면 다음 자료 시작 신호로 처리
         if(cur) { cards.push(cur); cur = null; }
       }
     }
