@@ -851,16 +851,19 @@ function parseTopics(text) {
   for(const block of blocks) {
     const titleMatch = block.match(/추천\s*\d+\s*[:：.]\s*(.+)/);
     if(!titleMatch) continue;
-    // 마크다운 기호 및 대괄호 제거
     const title = titleMatch[1].replace(/[\[\]\*\#`]/g,'').trim();
     if(!title) continue;
 
-    // 세부 내용 수집
+    // 세부 내용 수집 - 숫자. 키: 값 형식 파싱
     const lines = block.split('\n').slice(1);
     const details = {};
     let curKey = '';
     for(const line of lines) {
-      const keyMatch = line.match(/^[-•]\s*(.+?)[:：]\s*(.*)/);
+      // "0. 선정 근거:", "1. 핵심 내용:" 등 숫자. 형식
+      const numKeyMatch = line.match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
+      // "- 키: 값" 형식
+      const dashKeyMatch = line.match(/^[-•]\s*(.+?)[:：]\s*(.*)/);
+      const keyMatch = numKeyMatch || dashKeyMatch;
       if(keyMatch) {
         curKey = keyMatch[1].trim();
         details[curKey] = keyMatch[2].trim();
@@ -869,6 +872,7 @@ function parseTopics(text) {
       }
     }
     topics.push({ title, details, raw: block });
+    if(topics.length >= 3) break; // 3개 초과 내용 무시
   }
   return topics;
 }
