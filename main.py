@@ -217,14 +217,22 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
         if not allowed:
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
-    search_tool = {"google_search": {}}
-    model = genai.GenerativeModel(
-        model_name=MODEL,
-        system_instruction=system,
-        tools=[search_tool]
-    )
-    response = model.generate_content(user_msg)
-    return response.text
+    try:
+        from google.generativeai import protos
+        search_tool = genai.protos.Tool(
+            google_search=genai.protos.GoogleSearch()
+        )
+        model = genai.GenerativeModel(
+            model_name=MODEL,
+            system_instruction=system,
+            tools=[search_tool]
+        )
+        response = model.generate_content(user_msg)
+        return response.text
+    except Exception as e:
+        print(f"검색 호출 오류, 일반 호출로 대체: {e}")
+        model = genai.GenerativeModel(model_name=MODEL, system_instruction=system)
+        return model.generate_content(user_msg).text
 
 def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, student_code: str = None) -> str:
     if student_code:
