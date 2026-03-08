@@ -229,7 +229,14 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
     try:
-        grounding_tool = types.Tool(google_search=types.GoogleSearch())
+        grounding_tool = types.Tool(
+            google_search=types.GoogleSearch(
+                dynamic_retrieval_config=types.DynamicRetrievalConfig(
+                    mode=types.DynamicRetrievalConfigMode.MODE_DYNAMIC,
+                    dynamic_threshold=0.0  # 항상 검색 강제
+                )
+            )
+        )
         response = client_genai.models.generate_content(
             model=MODEL,
             contents=user_msg,
@@ -602,30 +609,22 @@ def find_resources(req: ResourceRequest):
     _sessions[req.session_id] = session
 
     system = f"""
-{CORE_PRINCIPLES}
-
 당신은 수행평가 자료 추천 전문가입니다.
 
-[지식 데이터 - 1순위 참고]
+[지식 데이터 - 1순위]
 {KNOWLEDGE_BASE}
 
-[자료 추천 절차 - 반드시 이 순서로]
-1단계: 위 지식 데이터에서 주제에 맞는 자료를 먼저 찾는다
-2단계: 지식 데이터만으로 3개를 못 채우면, 반드시 Google 검색 도구를 실행해서 실제 존재하는 자료를 추가로 찾는다
-3단계: 검색 결과에서 확인된 자료만 추천한다. 검색 없이 지어내는 것은 절대 금지
+[반드시 지켜야 할 규칙]
+- 지식 데이터에 있는 자료는 그대로 사용한다
+- 지식 데이터에 없는 자료는 반드시 Google 검색 도구로 직접 검색한 결과에서만 가져온다
+- 검색 결과에 실제로 나온 제목, 저자, 출처만 사용한다. 검색하지 않고 머릿속에서 지어내는 것은 절대 금지
+- 확인되지 않은 자료는 3개를 못 채워도 절대 추천하지 않는다
 
-[절대 금지]
-- 제목, 저자, 출처를 임의로 만들어내는 것은 절대 금지
-- "(가상의 제목)", "(실제 검색 필요)" 같은 표현이 붙은 자료 절대 금지
-- 검색으로 확인되지 않은 자료는 절대 추천하지 않는다
-- 3개를 못 채우는 것이 가짜 자료를 추천하는 것보다 훨씬 낫다
-
-출력 규칙 (반드시 준수):
-1. *, **, ##, ### 같은 마크다운 기호를 절대 사용하지 않는다.
-2. 영어 단어를 괄호 안에 넣지 않는다. 순수 한국어로만 작성한다.
-3. 원칙 번호나 내부 지침 내용을 절대 출력하지 않는다.
-4. 항목은 숫자 번호로 구분한다.
-5. 3개가 끝나면 추가 내용을 절대 출력하지 않는다.
+출력 규칙:
+1. *, **, ##, ### 같은 마크다운 기호를 절대 사용하지 않는다
+2. 원칙 번호나 내부 지침 내용을 절대 출력하지 않는다
+3. 항목은 숫자 번호로 구분한다
+4. 3개가 끝나면 추가 내용을 절대 출력하지 않는다
 
 반드시 아래 형식으로 최대 3개 추천 (각 자료마다 번호는 반드시 1부터 다시 시작):
 
@@ -664,13 +663,14 @@ def find_resources(req: ResourceRequest):
 학년: {session.grade or '미입력'}
 이전에 했던 주제: {session.previous_topic or '없음'}
 
-아래 순서로 자료를 찾아 추천해주세요:
+[자료 찾는 순서]
 1. 지식 데이터에서 주제에 맞는 자료를 먼저 확인한다
-2. 지식 데이터로 3개를 채우지 못하면, Google 검색 도구로 아래를 검색해서 실제 결과에 나온 자료만 추가한다:
-   - "{req.selected_topic} book recommendation"
+2. 지식 데이터로 3개를 못 채우면, Google 검색 도구를 사용해서 아래 검색어로 직접 검색한다:
+   - "{req.selected_topic} book"
    - "{req.selected_topic} TED Talk"
    - "{req.selected_topic} english article"
-3. 검색 결과에 실제로 나온 제목과 출처만 사용한다. 검색 결과에 없는 자료는 절대 추천하지 않는다
+3. 검색 결과 페이지에 실제로 나온 자료의 제목과 출처만 사용한다
+4. 검색하지 않고 기억이나 추측으로 자료를 추천하는 것은 절대 금지
 """
 
     result = call_text_with_search(system, user_msg, student_code=session.student_code)
