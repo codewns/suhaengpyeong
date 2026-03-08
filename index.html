@@ -1007,7 +1007,8 @@ function stripMarkdown(text) {
 
 function renderResources(text, topic) {
   text = stripMarkdown(text);
-  const blocks = text.split(/\n(?=자료\s*\d+)/);
+  // 자료 N / 추천 N / N. 제목 등 다양한 구분자 처리
+  const blocks = text.split(/\n(?=(?:자료|추천)\s*\d+|^\d+\.\s*제목)/m).filter(b => b.trim());
   let html = `
     <div style="margin-bottom:16px;">
       <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">선택 주제</div>
@@ -1018,14 +1019,57 @@ function renderResources(text, topic) {
       </div>
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">`;
+
   if(blocks.length > 1) {
-    blocks.forEach((block,i) => {
-      const title = block.split('\n')[0].replace(/자료\s*\d+\s*/,'').trim() || `자료 ${i+1}`;
-      const rest = block.replace(/[^\n]+/,'').trim();
-      html += `<div class="resource-card"><span class="resource-badge">자료 ${i+1}</span><div class="resource-title">${esc(title)}</div><div class="resource-desc">${esc(rest).replace(/\n/g,'<br>')}</div></div>`;
+    blocks.forEach((block, i) => {
+      // 첫 줄에서 제목 추출, 번호/자료/추천 prefix 제거
+      const firstLine = block.split('\n')[0].replace(/^(?:자료|추천)\s*\d+\s*[:：.]?\s*/,'').trim();
+      const rest = block.split('\n').slice(1).join('\n').trim();
+      // 내부 항목들을 줄 단위로 파싱
+      const lines = rest.split('\n').map(l => l.trim()).filter(Boolean);
+      const itemsHtml = lines.map(line => {
+        const m = line.match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
+        if(m) return `<div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:700;color:var(--primary);">${esc(m[1])}</span><span style="font-size:13px;color:var(--text);"> ${esc(m[2])}</span></div>`;
+        return `<div style="font-size:13px;color:var(--text-sub);line-height:1.6;">${esc(line)}</div>`;
+      }).join('');
+      html += `<div class="resource-card">
+        <span class="resource-badge">자료 ${i+1}</span>
+        ${firstLine ? `<div class="resource-title">${esc(firstLine)}</div>` : ''}
+        <div class="resource-desc" style="margin-top:8px;">${itemsHtml || esc(rest).replace(/\n/g,'<br>')}</div>
+      </div>`;
     });
   } else {
-    html += `<div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(text).replace(/\n/g,'<br>')}</div>`;
+    // 블록 분리 실패 시 줄 단위로 번호 항목 찾기
+    const lines = text.split('\n');
+    let cards = [];
+    let cur = null;
+    for(const line of lines) {
+      const headerMatch = line.match(/^(?:자료|추천)\s*(\d+)\s*[:：.]?\s*(.*)/);
+      if(headerMatch) {
+        if(cur) cards.push(cur);
+        cur = { num: headerMatch[1], title: headerMatch[2].trim(), lines: [] };
+      } else if(cur && line.trim()) {
+        cur.lines.push(line.trim());
+      }
+    }
+    if(cur) cards.push(cur);
+
+    if(cards.length > 0) {
+      cards.forEach((card, i) => {
+        const itemsHtml = card.lines.map(line => {
+          const m = line.match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
+          if(m) return `<div style="margin-bottom:6px;"><span style="font-size:11px;font-weight:700;color:var(--primary);">${esc(m[1])}</span><span style="font-size:13px;color:var(--text);"> ${esc(m[2])}</span></div>`;
+          return `<div style="font-size:13px;color:var(--text-sub);line-height:1.6;">${esc(line)}</div>`;
+        }).join('');
+        html += `<div class="resource-card">
+          <span class="resource-badge">자료 ${i+1}</span>
+          ${card.title ? `<div class="resource-title">${esc(card.title)}</div>` : ''}
+          <div class="resource-desc" style="margin-top:8px;">${itemsHtml}</div>
+        </div>`;
+      });
+    } else {
+      html += `<div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(text).replace(/\n/g,'<br>')}</div>`;
+    }
   }
   document.getElementById('resourceContent').innerHTML = html;
 }
