@@ -639,6 +639,8 @@ async function uploadAllImages() {
       const formData = new FormData();
       formData.append('session_id', sessionId);
       formData.append('image', pendingImages[i].file);
+      formData.append('subject', studentInfo?.subject || '');
+      formData.append('career', studentInfo?.career || '');
       const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
       const data = await res.json();
       if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
@@ -897,12 +899,12 @@ function openTopicModal(idx) {
 
   const detailRows = Object.entries(t.details).map(([k,v]) =>
     `<div style="margin-bottom:12px;">
-      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(k)}</div>
-      <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(v)}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(stripMarkdown(k))}</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(stripMarkdown(v)).replace(/\n/g,'<br>')}</div>
     </div>`
   ).join('');
 
-  const rawFallback = detailRows || `<div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(t.raw).replace(/\n/g,'<br>')}</div>`;
+  const rawFallback = detailRows || `<div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(stripMarkdown(t.raw)).replace(/\n/g,'<br>')}</div>`;
 
   document.getElementById('topicModalTitle').textContent = t.title;
   document.getElementById('topicModalBody').innerHTML = rawFallback;
@@ -963,8 +965,8 @@ async function confirmTopic(idx) {
 function renderTopicSummary(t) {
   const detailRows = Object.entries(t.details||{}).map(([k,v]) => `
     <div style="margin-bottom:14px;">
-      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(k)}</div>
-      <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(v)}</div>
+      <div style="font-size:11px;font-weight:700;color:var(--primary);margin-bottom:4px;">${esc(stripMarkdown(k))}</div>
+      <div style="font-size:13px;line-height:1.7;color:var(--text);">${esc(stripMarkdown(v)).replace(/\n/g,'<br>')}</div>
     </div>`).join('');
 
   document.getElementById('topicSummaryContent').innerHTML = `
