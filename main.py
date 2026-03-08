@@ -218,9 +218,9 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
     try:
-        from google.generativeai import protos
+        from google.generativeai.types import GenerationConfig
         search_tool = genai.protos.Tool(
-            google_search=genai.protos.GoogleSearch()
+            google_search_retrieval=genai.protos.GoogleSearchRetrieval()
         )
         model = genai.GenerativeModel(
             model_name=MODEL,
@@ -591,7 +591,7 @@ def find_resources(req: ResourceRequest):
 5. 실제로 존재하는 자료만 추천한다. 확인되지 않으면 "적합한 자료를 찾지 못했어요"라고 한다.
 6. 3개가 끝나면 추가 내용을 절대 출력하지 않는다.
 
-반드시 아래 형식으로 최대 3개 추천:
+반드시 아래 형식으로 최대 3개 추천 (각 자료마다 번호는 반드시 1부터 다시 시작):
 
 자료 1
 1. 제목:
