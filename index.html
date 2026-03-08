@@ -413,8 +413,8 @@ function showPreviousHistory(prev) {
       <button class="quick-btn" onclick="showWelcome('${esc(studentName)}')">🔄 새로 시작하기</button>
     </div>`;
   addAiMsg(html, true);
-  if(prev.resources) document.getElementById('resourceContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 추천 자료</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.resources)).replace(/\n/g,'<br>')}</div>`;
-  if(prev.evaluation) document.getElementById('evalContent').innerHTML=`<div style="font-size:13px;color:var(--text-sub);margin-bottom:12px;">📌 지난번 평가 결과</div><div style="font-size:13px;line-height:1.8;color:var(--text);">${esc(stripMarkdown(prev.evaluation)).replace(/\n/g,'<br>')}</div>`;
+  if(prev.resources) renderResources(prev.resources, prev.selected_topic || '');
+  if(prev.evaluation) renderEvaluation(prev.evaluation);
 }
 
 function resumeFromPrev() {
