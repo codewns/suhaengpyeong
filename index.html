@@ -77,7 +77,6 @@
   .btn-primary { padding:11px 20px; background:var(--primary); color:#fff; border:none; border-radius:10px; font-size:13px; font-weight:600; font-family:'Noto Sans KR',sans-serif; cursor:pointer; transition:all 0.2s; }
   .btn-primary:hover { background:#3d50e0; }
 
-  /* 멀티 이미지 업로드 */
   .upload-area { border:2px dashed var(--border); border-radius:16px; padding:28px; text-align:center; cursor:pointer; transition:all 0.2s; background:#fafbff; margin-top:12px; }
   .upload-area:hover { border-color:var(--primary); background:var(--primary-light); }
   .upload-icon { font-size:32px; margin-bottom:8px; }
@@ -249,7 +248,6 @@
     </div>
 
     <div class="right-panel">
-      <!-- 채팅 탭에서 보이는 주제 요약 -->
       <div id="panelTopicSummary" style="display:none;flex-direction:column;height:100%">
         <div class="panel-header"><span class="panel-title">🎯 선택한 주제</span></div>
         <div class="panel-content" id="topicSummaryContent">
@@ -365,10 +363,9 @@ let selectedTopic = null;
 let assessmentInfo = null;
 let studentName = null;
 let studentCode = null;
-let prevSessionData = null; // 이전 세션 데이터 전역 저장
+let prevSessionData = null;
 
-// 멀티 이미지 관리
-let pendingImages = []; // { file, dataUrl }
+let pendingImages = [];
 
 // ───────────────────────────────────────
 // 로그인
@@ -420,7 +417,6 @@ function showPreviousHistory(prev) {
 function resumeFromPrev() {
   if(!prevSessionData) return;
   const p = prevSessionData;
-  // DB에 저장된 세부내용 파싱
   let topicObj = { title: p.selected_topic || '', details: {} };
   if(p.selected_topic_detail) {
     const details = {};
@@ -443,7 +439,6 @@ function resumeSession(subject, career, topic, topics, topicObj) {
   document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career || studentName;
 
-  // 채팅 탭으로 강제 전환
   document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', i===0));
   document.getElementById('panelChat').style.display = 'flex';
   document.getElementById('panelResources').style.display = 'none';
@@ -470,10 +465,10 @@ function resumeSession(subject, career, topic, topics, topicObj) {
 }
 
 // ───────────────────────────────────────
-// STEP 0: 환영 + 과목/이전주제 먼저 물어보기
+// 환영
 // ───────────────────────────────────────
 function updateCallUsage(count, limit) {
-  if(!limit) return; // 무제한이면 숨김
+  if(!limit) return;
   const remaining = Math.max(0, limit - count);
   const pct = Math.round((remaining / limit) * 100);
   const color = pct > 50 ? '#22c55e' : pct > 20 ? '#f59e0b' : '#ef4444';
@@ -487,7 +482,6 @@ function updateCallUsage(count, limit) {
 
 function showWelcome(name) {
   document.getElementById('chatMessages').innerHTML = '';
-  // 선택한 주제 패널 숨기기
   const topicSummary = document.getElementById('panelTopicSummary');
   if(topicSummary) topicSummary.style.display = 'none';
   document.querySelector('.right-panel').style.display = 'none';
@@ -498,7 +492,6 @@ function showWelcome(name) {
   showPreUploadForm();
 }
 
-// STEP 0 폼: 과목 + 이전 주제 + 희망 진로 (이미지 업로드 전 필수)
 function showPreUploadForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
@@ -554,7 +547,7 @@ function submitPreForm() {
 }
 
 // ───────────────────────────────────────
-// 멀티 이미지 업로드 UI
+// 멀티 이미지 업로드
 // ───────────────────────────────────────
 function showUploadArea() {
   const wrap = document.createElement('div');
@@ -608,7 +601,6 @@ function renderImagePreviews() {
       <button class="image-thumb-remove" onclick="removeImage(${idx})">✕</button>`;
     grid.appendChild(wrap);
   });
-  // + 추가 버튼
   const addBtn = document.createElement('div');
   addBtn.className = 'image-add-btn';
   addBtn.innerHTML = '<span>+</span><span style="font-size:10px;margin-top:2px;">추가</span>';
@@ -628,17 +620,14 @@ async function uploadAllImages() {
   if(!pendingImages.length) { showToast('사진을 먼저 추가해주세요!'); return; }
   if(!sessionId) { showToast('서버 연결 중이에요. 잠시 후 다시 시도해주세요.'); return; }
 
-  // 업로드 UI 숨기기
   const uploadWrap = document.getElementById('uploadAreaWrap');
   if(uploadWrap) uploadWrap.style.opacity = '0.5';
 
-  // 이미지 목록을 사용자 메시지로
   addUserMsg(`📎 안내문 사진 ${pendingImages.length}장 업로드`);
   addLoading();
   updateStep(3);
 
   try {
-    // 각 이미지를 순차적으로 분석 후 결과 합산
     let combinedResult = '';
     for(let i = 0; i < pendingImages.length; i++) {
       const formData = new FormData();
@@ -667,7 +656,7 @@ async function uploadAllImages() {
 }
 
 // ───────────────────────────────────────
-// 업로드 후 바로 주제 추천 요청
+// 주제 추천
 // ───────────────────────────────────────
 async function requestTopics() {
   addLoading();
@@ -695,9 +684,6 @@ async function requestTopics() {
   }
 }
 
-// ───────────────────────────────────────
-// STEP 2: 안내문 분석 후 희망 진로만 묻기 (미사용 - 진로는 사전 폼에서 수집)
-// ───────────────────────────────────────
 function showCareerForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
@@ -753,7 +739,7 @@ async function submitCareerOnly() {
 }
 
 // ───────────────────────────────────────
-// 안내문 없이 시작하기 (업로드 화면에서)
+// 안내문 없이 시작
 // ───────────────────────────────────────
 function skipToFormFromUpload() {
   const uploadWrap = document.getElementById('uploadAreaWrap');
@@ -765,7 +751,6 @@ function skipToFormFromUpload() {
   showSkipForm();
 }
 
-// 안내문 없이 시작: 과목 + 이전 주제 + 대략적인 수행평가 정보 + 희망진로
 function showSkipForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
@@ -845,13 +830,13 @@ async function submitSkipForm() {
 }
 
 // ───────────────────────────────────────
-// 주제 카드 (모달 포함)
+// 주제 카드 (3개 각각 별도 말풍선)
 // ───────────────────────────────────────
-let topicDataStore = []; // 전체 주제 데이터 저장
+let topicDataStore = [];
 
 function parseTopics(text) {
   const topics = [];
-  const blocks = text.split(/(?=\n*추천\s*\d+\s*[:：.\-–])/);
+  const blocks = text.split(/(?=추천\s*[123]\s*[:：.\-–])/);
   for(const block of blocks) {
     const titleMatch = block.match(/추천\s*\d+\s*[:：.\-–]?\s*(.+)/);
     if(!titleMatch) continue;
@@ -884,22 +869,31 @@ function parseTopics(text) {
 function showTopicCards(text) {
   topicDataStore = parseTopics(text);
 
-  // 파싱 실패 시 전체 텍스트를 하나의 주제로
   if(topicDataStore.length === 0) {
-  const firstLine = text.split('\n').find(l => l.trim() && !l.startsWith('#')) || '추천 주제';
-  topicDataStore = [{ title: firstLine.replace(/추천\s*\d+\s*[:：.]\s*/,'').replace(/[\[\]\*\#`]/g,'').trim() || '추천 주제', details:{}, raw: text }];
-}
+    const firstLine = text.split('\n').find(l => l.trim() && !l.startsWith('#')) || '추천 주제';
+    topicDataStore = [{ title: firstLine.replace(/추천\s*\d+\s*[:：.]\s*/,'').replace(/[\[\]\*\#`]/g,'').trim() || '추천 주제', details:{}, raw: text }];
+  }
 
-  const cardsHtml = topicDataStore.map((t,i) => `
-    <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})">
-      <div class="card-num">추천 ${i+1}</div>
-      <div class="card-title">${esc(t.title)}</div>
-      <div class="card-desc" style="font-size:12px;color:var(--text-sub);margin-top:4px;">클릭해서 자세히 보기 →</div>
-    </div>`).join('');
+  addAiMsg(`주제를 골라주세요! 카드를 클릭하면 자세한 내용을 볼 수 있어요 🎯`, true);
 
-  addAiMsg(`주제를 골라주세요! 카드를 클릭하면 자세한 내용을 볼 수 있어요 🎯<br><br>
-    <div class="recommend-cards">${cardsHtml}</div>
-    <div class="quick-btns"><button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button></div>`, true, true);
+  topicDataStore.forEach((t, i) => {
+    addAiMsg(`
+      <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})" style="cursor:pointer;">
+        <div class="card-num">추천 ${i+1}</div>
+        <div class="card-title">${esc(t.title)}</div>
+        <div class="card-desc" style="font-size:12px;color:var(--text-sub);margin-top:4px;">클릭해서 자세히 보기 →</div>
+      </div>`, true);
+  });
+
+  // 다시 추천받기 버튼을 마지막 카드 말풍선에 추가
+  const lastMsg = document.getElementById('chatMessages').lastElementChild;
+  if(lastMsg) {
+    const btnWrap = document.createElement('div');
+    btnWrap.className = 'quick-btns';
+    btnWrap.style.marginTop = '8px';
+    btnWrap.innerHTML = `<button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button>`;
+    lastMsg.querySelector('.ai-bubble').appendChild(btnWrap);
+  }
 }
 
 function openTopicModal(idx) {
@@ -932,7 +926,6 @@ async function confirmTopic(idx) {
   const t = topicDataStore[idx];
   if(!t) return;
 
-  // 모든 카드 클릭 비활성화
   document.querySelectorAll('.recommend-card').forEach(c => {
     c.onclick = null;
     c.style.cursor = 'default';
@@ -949,7 +942,6 @@ async function confirmTopic(idx) {
 
   addUserMsg(`"${t.title}" 으로 확정할게요!`);
   addLoading();
-  // 세부내용을 문자열로 직렬화해서 저장
   const detailText = Object.entries(t.details||{}).map(([k,v])=>`${k}: ${v}`).join('\n');
   try {
     const res = await apiFetch(`${API}/find-resources`, {
@@ -970,7 +962,6 @@ async function confirmTopic(idx) {
   }
 }
 
-
 function renderTopicSummary(t) {
   const detailRows = Object.entries(t.details||{}).map(([k,v]) => `
     <div style="margin-bottom:14px;">
@@ -990,24 +981,22 @@ function renderTopicSummary(t) {
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">
     ${detailRows || `<div style="font-size:13px;color:var(--text-sub);">세부 내용이 없어요.</div>`}`;
 
-  // 채팅 탭이면 오른쪽 패널 표시
   document.querySelector('.right-panel').style.display = 'flex';
   document.getElementById('panelTopicSummary').style.display = 'flex';
 }
 
 function stripMarkdown(text) {
   return text
-    .replace(/#{1,6}\s*/g, '')       // ### 제거
-    .replace(/\*\*(.*?)\*\*/g, '$1') // **bold** → bold
-    .replace(/\*(.*?)\*/g, '$1')     // *italic* → italic
-    .replace(/^\s*[-*]\s+/gm, '')    // 불릿 제거
-    .replace(/^---+$/gm, '')         // --- 구분선 제거
-    .replace(/\n{3,}/g, '\n\n')      // 3줄 이상 공백 → 2줄
+    .replace(/#{1,6}\s*/g, '')
+    .replace(/\*\*(.*?)\*\*/g, '$1')
+    .replace(/\*(.*?)\*/g, '$1')
+    .replace(/^\s*[-*]\s+/gm, '')
+    .replace(/^---+$/gm, '')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
 function renderResources(text, topic) {
-  // stripMarkdown 전에 먼저 파싱 (--- 구분선 보존)
   let html = `
     <div style="margin-bottom:16px;">
       <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">선택 주제</div>
@@ -1019,13 +1008,11 @@ function renderResources(text, topic) {
     </div>
     <hr style="border:none;border-top:1px solid var(--border);margin-bottom:16px;">`;
 
-  // 줄 단위로 자료 블록 파싱 (마크다운 제거 전)
   const lines = text.split('\n');
   let cards = [];
   let cur = null;
   for(const line of lines) {
     const headerMatch = line.match(/^(?:자료|추천)\s*\d+\s*[:：.]?\s*(.*)$/);
-    // "N. 제목:" 패턴이면 새 자료 블록 시작 (번호 무관)
     const titleLineMatch = line.trim().match(/^\d+\.\s*제목[:：]\s*(.*)/);
     if(headerMatch) {
       if(cur) cards.push(cur);
@@ -1046,7 +1033,6 @@ function renderResources(text, topic) {
     }
   }
   if(cur) cards.push(cur);
-  // 내용 없는 빈 카드 제거
   cards = cards.filter(c => Object.keys(c.items).length > 0 || c.title.trim().length > 0);
 
   if(cards.length > 0) {
@@ -1072,7 +1058,7 @@ function renderResources(text, topic) {
 }
 
 function showEvalInput() {
-  const uid = Date.now(); // 고유 ID로 중복 방지
+  const uid = Date.now();
   addAiMsg(`완성본이 준비되면 평가받으세요! 📋<br>
     <div class="eval-type-tabs">
       <button class="eval-type-tab active" id="evalTabText_${uid}" onclick="switchEvalType('text','${uid}')">📝 텍스트로 평가</button>
@@ -1099,7 +1085,6 @@ function switchEvalType(type, uid) {
 }
 
 async function evaluateSubmission(uid) {
-  // uid로 정확한 textarea 찾기
   const area = document.getElementById(`evalTextArea_${uid}`);
   const text = area ? area.querySelector('textarea')?.value?.trim() : null;
   if(!text) { showToast('평가할 내용을 입력해주세요!'); return; }
@@ -1159,9 +1144,7 @@ async function sendMessage() {
   input.value = ''; autoResize(input);
   addUserMsg(text);
 
-  // 긍정 반응 키워드
   const positiveKeywords = ['좋다','좋아','맘에','마음에','완벽','최고','굿','good','ㅋㅋ','ㅎㅎ','감사','고마','잘됐','잘 됐','선택','확정','이걸로'];
-  // 방법 질문 키워드
   const howKeywords = ['어떻게','어떻게 써','어떻게 쓰','방법','작성','써야','쓰면','시작','뭐부터','모르겠','막막','도움'];
 
   const lower = text.toLowerCase();
@@ -1176,8 +1159,6 @@ async function sendMessage() {
     addAiMsg('위에서 추천드린 자료들을 참고해서 본인의 언어로 작성해보세요!');
     return;
   }
-
-  // 그 외엔 고정 응답
   addAiMsg('수행평가와 관련된 질문을 해주세요 😊');
 }
 
