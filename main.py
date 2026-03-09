@@ -444,7 +444,7 @@ async def analyze_assessment(
     ext = image.filename.split(".")[-1].lower()
     mime_type = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp"}.get(ext,"image/jpeg")
 
-    system = f"""
+  system = f"""
 {CORE_PRINCIPLES}
 
 당신은 고등학교 수행평가 안내문 분석 전문가입니다.
@@ -465,8 +465,21 @@ async def analyze_assessment(
 - 필수 포함 내용:
 - 특이사항:
 
+[질문 목록 - 절대 누락 금지]
+안내문에 번호가 매겨진 질문 목록이 있으면 반드시 아래 형식으로 전부 추출하세요.
+질문이 10개든 20개든 하나도 빠짐없이 전부 적으세요.
+질문 1: (질문 내용 그대로)
+질문 2: (질문 내용 그대로)
+질문 3: (질문 내용 그대로)
+...
+질문 목록이 없으면 "질문 목록 없음"으로 표시하세요.
+
+[자료/도서/영상 목록 - 절대 누락 금지]
+안내문에 학생이 선택해야 할 자료/도서/영상 목록이 있으면 전부 추출하세요.
+없으면 "없음"으로 표시하세요.
+
 확인 안 되는 항목은 '정보 없음'으로 표시하세요.
-불확실한 정보는 절대 임의로 추가하지 마세요 (원칙 6).
+불확실한 정보는 절대 임의로 추가하지 마세요.
 """.strip()
 
     result = call_vision(system, image_bytes, mime_type, "수행평가 안내문의 모든 정보를 추출해주세요.", student_code=session.student_code)
