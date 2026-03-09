@@ -1,6 +1,7 @@
 import os
 import uuid
 import glob
+import time
 from dataclasses import dataclass, field
 from typing import Optional
 from datetime import datetime
@@ -199,6 +200,25 @@ def db_save_conversation(session: StudentSession):
 
 
 # ───────────────────────────────────────
+# 재시도 헬퍼
+# ───────────────────────────────────────
+def call_with_retry(fn, retries=3, delay=5):
+    """503 오류 시 자동 재시도"""
+    for attempt in range(retries):
+        try:
+            return fn()
+        except HTTPException:
+            raise
+        except Exception as e:
+            if "503" in str(e) or "UNAVAILABLE" in str(e):
+                if attempt < retries - 1:
+                    time.sleep(delay * (attempt + 1))  # 5초, 10초, 15초
+                    continue
+            raise e
+    raise HTTPException(status_code=503, detail="AI 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.")
+
+
+# ───────────────────────────────────────
 # Gemini 호출 (호출 제한 포함)
 # ───────────────────────────────────────
 def call_text(system: str, user_msg: str, history: list = None, student_code: str = None) -> str:
@@ -214,11 +234,15 @@ def call_text(system: str, user_msg: str, history: list = None, student_code: st
         text = parts[0] if parts and isinstance(parts[0], str) else (parts[0].get("text", "") if parts else "")
         contents.append(types.Content(role=role, parts=[types.Part(text=text)]))
     contents.append(types.Content(role="user", parts=[types.Part(text=user_msg)]))
-    response = client_genai.models.generate_content(
-        model=MODEL,
-        contents=contents,
-        config=types.GenerateContentConfig(system_instruction=system)
-    )
+
+    def _call():
+        return client_genai.models.generate_content(
+            model=MODEL,
+            contents=contents,
+            config=types.GenerateContentConfig(system_instruction=system)
+        )
+
+    response = call_with_retry(_call)
     return response.text
 
 def call_text_with_search(system: str, user_msg: str, student_code: str = None) -> str:
@@ -237,22 +261,32 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
                 )
             )
         )
-        response = client_genai.models.generate_content(
-            model=MODEL,
-            contents=user_msg,
-            config=types.GenerateContentConfig(
-                system_instruction=system,
-                tools=[grounding_tool]
+
+        def _call():
+            return client_genai.models.generate_content(
+                model=MODEL,
+                contents=user_msg,
+                config=types.GenerateContentConfig(
+                    system_instruction=system,
+                    tools=[grounding_tool]
+                )
             )
-        )
+
+        response = call_with_retry(_call)
         return response.text
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"검색 호출 오류, 일반 호출로 대체: {e}")
-        response = client_genai.models.generate_content(
-            model=MODEL,
-            contents=user_msg,
-            config=types.GenerateContentConfig(system_instruction=system)
-        )
+
+        def _fallback():
+            return client_genai.models.generate_content(
+                model=MODEL,
+                contents=user_msg,
+                config=types.GenerateContentConfig(system_instruction=system)
+            )
+
+        response = call_with_retry(_fallback)
         return response.text
 
 def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, student_code: str = None) -> str:
@@ -261,14 +295,18 @@ def call_vision(system: str, image_bytes: bytes, mime_type: str, prompt: str, st
         if not allowed:
             raise HTTPException(status_code=429, detail=f"이용 횟수를 모두 사용했어요. (사용: {count}/{limit}회)")
         db_increment_call_count(student_code)
-    response = client_genai.models.generate_content(
-        model=MODEL,
-        contents=[
-            types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_bytes)),
-            types.Part(text=prompt)
-        ],
-        config=types.GenerateContentConfig(system_instruction=system)
-    )
+
+    def _call():
+        return client_genai.models.generate_content(
+            model=MODEL,
+            contents=[
+                types.Part(inline_data=types.Blob(mime_type=mime_type, data=image_bytes)),
+                types.Part(text=prompt)
+            ],
+            config=types.GenerateContentConfig(system_instruction=system)
+        )
+
+    response = call_with_retry(_call)
     return response.text
 
 
