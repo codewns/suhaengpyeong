@@ -676,7 +676,6 @@ def find_resources(req: ResourceRequest):
 4. 수행평가 활용법: (구체적으로 어떤 평가 항목에 연결되는지 포함)
 5. 추후 심화 연결: (이 자료를 발판으로 어떤 심화 탐구가 가능한지)
 6. 진로 연계:
-7. 링크: (실제 검색으로 확인된 URL. 확인 안 되면 이 항목 생략)
 ⚠️ 주의: 이 자료의 내용을 그대로 옮기지 말고, 반드시 본인의 언어로 재구성하세요.
 
 자료 2
@@ -686,7 +685,6 @@ def find_resources(req: ResourceRequest):
 4. 수행평가 활용법:
 5. 추후 심화 연결:
 6. 진로 연계:
-7. 링크: (실제 검색으로 확인된 URL. 확인 안 되면 이 항목 생략)
 ⚠️ 주의: 이 자료의 내용을 그대로 옮기지 말고, 반드시 본인의 언어로 재구성하세요.
 
 자료 3
@@ -696,7 +694,6 @@ def find_resources(req: ResourceRequest):
 4. 수행평가 활용법:
 5. 추후 심화 연결:
 6. 진로 연계:
-7. 링크: (실제 검색으로 확인된 URL. 확인 안 되면 이 항목 생략)
 ⚠️ 주의: 이 자료의 내용을 그대로 옮기지 말고, 반드시 본인의 언어로 재구성하세요.
 """.strip()
 
@@ -714,8 +711,7 @@ def find_resources(req: ResourceRequest):
    - "{req.selected_topic} TED Talk"
    - "{req.selected_topic} english article"
 3. 검색 결과 페이지에 실제로 나온 자료의 제목과 출처만 사용한다
-4. 검색 결과에서 확인된 URL을 7번 링크 항목에 반드시 포함한다
-5. 검색하지 않고 기억이나 추측으로 자료나 링크를 추천하는 것은 절대 금지
+4. 검색하지 않고 기억이나 추측으로 자료나 링크를 추천하는 것은 절대 금지
 """
 
     result = call_text_with_search(system, user_msg, student_code=session.student_code)
