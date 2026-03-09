@@ -877,23 +877,25 @@ function showTopicCards(text) {
   addAiMsg(`주제를 골라주세요! 카드를 클릭하면 자세한 내용을 볼 수 있어요 🎯`, true);
 
   topicDataStore.forEach((t, i) => {
-    addAiMsg(`
-      <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})" style="cursor:pointer;">
-        <div class="card-num">추천 ${i+1}</div>
-        <div class="card-title">${esc(t.title)}</div>
-        <div class="card-desc" style="font-size:12px;color:var(--text-sub);margin-top:4px;">클릭해서 자세히 보기 →</div>
-      </div>`, true);
+    const wrap = document.createElement('div');
+    wrap.className = 'msg-ai';
+    wrap.innerHTML = `
+      <div class="ai-avatar">🤖</div>
+      <div style="width:100%;max-width:520px;">
+        <div class="ai-name">AI 수행평가 코치</div>
+        <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})" style="cursor:pointer;background:#fff;width:100%;">
+          <div class="card-num">추천 ${i+1}</div>
+          <div class="card-title">${esc(t.title)}</div>
+          <div class="card-desc" style="font-size:12px;color:var(--text-sub);margin-top:4px;">클릭해서 자세히 보기 →</div>
+        </div>
+        ${i === topicDataStore.length - 1 ? `
+        <div class="quick-btns" style="margin-top:8px;">
+          <button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button>
+        </div>` : ''}
+      </div>`;
+    document.getElementById('chatMessages').appendChild(wrap);
+    scrollBot();
   });
-
-  // 다시 추천받기 버튼을 마지막 카드 말풍선에 추가
-  const lastMsg = document.getElementById('chatMessages').lastElementChild;
-  if(lastMsg) {
-    const btnWrap = document.createElement('div');
-    btnWrap.className = 'quick-btns';
-    btnWrap.style.marginTop = '8px';
-    btnWrap.innerHTML = `<button class="quick-btn" onclick="retryTopics()">🔄 다시 추천받기</button>`;
-    lastMsg.querySelector('.ai-bubble').appendChild(btnWrap);
-  }
 }
 
 function openTopicModal(idx) {
