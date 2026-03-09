@@ -21,7 +21,7 @@ SUPABASE_URL    = os.environ.get("SUPABASE_URL")
 SUPABASE_KEY    = os.environ.get("SUPABASE_KEY")
 
 client_genai = genai.Client(api_key=GEMINI_API_KEY)
-MODEL = "gemini-2.5-flash-lite"
+MODEL = "gemini-2.5-flash"
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 
