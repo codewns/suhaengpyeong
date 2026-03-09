@@ -103,7 +103,7 @@ class StudentSession:
     grade: Optional[str] = None
     subject: Optional[str] = None
     desired_career: Optional[str] = None
-    previous_topic: Optional[str] = None   # ★ 이전에 했던 주제
+    previous_topic: Optional[str] = None
     step: str = "init"
     selected_topic: Optional[str] = None
     selected_topic_detail: Optional[str] = None
@@ -137,22 +137,20 @@ def db_get_student(code: str) -> Optional[dict]:
         return None
 
 def db_check_call_limit(code: str) -> tuple[bool, int, int]:
-    """호출 가능 여부 반환. (가능여부, 현재횟수, 최대횟수)"""
     try:
         student = db_get_student(code)
         if not student:
             return False, 0, 0
         limit = student.get("call_limit") or 0
         count = student.get("call_count") or 0
-        if limit == 0:  # 무제한
+        if limit == 0:
             return True, count, limit
         return count < limit, count, limit
     except Exception as e:
         print(f"호출 제한 확인 오류: {e}")
-        return True, 0, 0  # 오류 시 통과
+        return True, 0, 0
 
 def db_increment_call_count(code: str):
-    """호출 횟수 1 증가"""
     try:
         student = db_get_student(code)
         if not student:
@@ -173,7 +171,6 @@ def db_get_conversation(code: str) -> Optional[dict]:
 def db_save_conversation(session: StudentSession):
     try:
         now = datetime.utcnow().isoformat()
-        # selected_topic_detail을 selected_topic에 |||로 구분해 같이 저장
         topic_combined = session.selected_topic or ""
         if session.selected_topic_detail:
             topic_combined = (session.selected_topic or "") + "|||" + session.selected_topic_detail
@@ -203,7 +200,6 @@ def db_save_conversation(session: StudentSession):
 # 재시도 헬퍼
 # ───────────────────────────────────────
 def call_with_retry(fn, retries=3, delay=5):
-    """503 오류 시 자동 재시도"""
     for attempt in range(retries):
         try:
             return fn()
@@ -212,14 +208,14 @@ def call_with_retry(fn, retries=3, delay=5):
         except Exception as e:
             if "503" in str(e) or "UNAVAILABLE" in str(e):
                 if attempt < retries - 1:
-                    time.sleep(delay * (attempt + 1))  # 5초, 10초, 15초
+                    time.sleep(delay * (attempt + 1))
                     continue
             raise e
     raise HTTPException(status_code=503, detail="AI 서버가 일시적으로 혼잡합니다. 잠시 후 다시 시도해주세요.")
 
 
 # ───────────────────────────────────────
-# Gemini 호출 (호출 제한 포함)
+# Gemini 호출
 # ───────────────────────────────────────
 def call_text(system: str, user_msg: str, history: list = None, student_code: str = None) -> str:
     if student_code:
@@ -246,7 +242,6 @@ def call_text(system: str, user_msg: str, history: list = None, student_code: st
     return response.text
 
 def call_text_with_search(system: str, user_msg: str, student_code: str = None) -> str:
-    """Google Search 그라운딩을 활용한 Gemini 호출"""
     if student_code:
         allowed, count, limit = db_check_call_limit(student_code)
         if not allowed:
@@ -257,7 +252,7 @@ def call_text_with_search(system: str, user_msg: str, student_code: str = None) 
             google_search=types.GoogleSearch(
                 dynamic_retrieval_config=types.DynamicRetrievalConfig(
                     mode=types.DynamicRetrievalConfigMode.MODE_DYNAMIC,
-                    dynamic_threshold=0.0  # 항상 검색 강제
+                    dynamic_threshold=0.0
                 )
             )
         )
@@ -370,7 +365,6 @@ def login(req: LoginRequest):
 
     _sessions[session_id] = session
 
-    # 프론트용 previous 가공 - selected_topic 분리
     if prev:
         topic_raw = prev.get("selected_topic", "")
         if "|||" in topic_raw:
@@ -484,7 +478,6 @@ async def analyze_assessment(
 
     result = call_vision(system, image_bytes, mime_type, "수행평가 안내문의 모든 정보를 추출해주세요.", student_code=session.student_code)
 
-    # 여러 장 업로드 시 결과를 누적
     session.assessment_info = (session.assessment_info or "") + "\n\n" + result
     session.assessment_info = session.assessment_info.strip()
     session.step = "assessed"
@@ -508,7 +501,7 @@ class StudentInfoRequest(BaseModel):
     subject: str
     desired_career: str
     assessment_info: Optional[str] = None
-    previous_topic: Optional[str] = None   # ★ 이전에 했던 주제
+    previous_topic: Optional[str] = None
 
 @app.post("/recommend-topics")
 def recommend_topics(req: StudentInfoRequest):
