@@ -444,7 +444,7 @@ async def analyze_assessment(
     ext = image.filename.split(".")[-1].lower()
     mime_type = {"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp"}.get(ext,"image/jpeg")
 
-system = f"""
+    system = f"""
 {CORE_PRINCIPLES}
 
 당신은 고등학교 수행평가 안내문 분석 전문가입니다.
