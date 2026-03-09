@@ -851,22 +851,18 @@ let topicDataStore = []; // 전체 주제 데이터 저장
 
 function parseTopics(text) {
   const topics = [];
-  // 추천 N: 또는 추천 N. 으로 시작하는 블록 분리
-  const blocks = text.split(/(?=추천\s*\d+\s*[:：.])/);
+  const blocks = text.split(/(?=\n*추천\s*\d+\s*[:：.\-–])/);
   for(const block of blocks) {
-    const titleMatch = block.match(/추천\s*\d+\s*[:：.]\s*(.+)/);
+    const titleMatch = block.match(/추천\s*\d+\s*[:：.\-–]?\s*(.+)/);
     if(!titleMatch) continue;
     const title = titleMatch[1].replace(/[\[\]\*\#`]/g,'').trim();
     if(!title) continue;
 
-    // 세부 내용 수집 - 숫자. 키: 값 형식 파싱
     const lines = block.split('\n').slice(1);
     const details = {};
     let curKey = '';
     for(const line of lines) {
-      // "0. 선정 근거:", "1. 핵심 내용:" 등 숫자. 형식
       const numKeyMatch = line.match(/^\d+\.\s*(.+?)[:：]\s*(.*)/);
-      // "- 키: 값" 형식
       const dashKeyMatch = line.match(/^[-•]\s*(.+?)[:：]\s*(.*)/);
       const keyMatch = numKeyMatch || dashKeyMatch;
       if(keyMatch) {
@@ -876,12 +872,11 @@ function parseTopics(text) {
         details[curKey] += ' ' + line.trim();
       }
     }
-    // 각 값 끝의 --- 및 공백 제거
     for(const k of Object.keys(details)) {
       details[k] = details[k].replace(/\s*---+\s*$/g,'').trim();
     }
     topics.push({ title, details, raw: block });
-    if(topics.length >= 3) break; // 3개 초과 내용 무시
+    if(topics.length >= 3) break;
   }
   return topics;
 }
@@ -891,8 +886,9 @@ function showTopicCards(text) {
 
   // 파싱 실패 시 전체 텍스트를 하나의 주제로
   if(topicDataStore.length === 0) {
-    topicDataStore = [{ title: text.split('\n')[0].replace(/추천\s*\d+\s*[:：.]\s*/,'').replace(/[\[\]]/g,'').trim() || '추천 주제', details:{}, raw: text }];
-  }
+  const firstLine = text.split('\n').find(l => l.trim() && !l.startsWith('#')) || '추천 주제';
+  topicDataStore = [{ title: firstLine.replace(/추천\s*\d+\s*[:：.]\s*/,'').replace(/[\[\]\*\#`]/g,'').trim() || '추천 주제', details:{}, raw: text }];
+}
 
   const cardsHtml = topicDataStore.map((t,i) => `
     <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})">
