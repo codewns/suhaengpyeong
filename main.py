@@ -321,13 +321,6 @@ app.add_middleware(
 def root():
     return {"status": "ok", "message": "수행평가 AI 코치 (Gemini 2.5 Flash + Supabase) 실행 중!"}
 
-import httpx
-
-@app.get("/my-ip")
-async def my_ip():
-    async with httpx.AsyncClient() as client:
-        res = await client.get("https://api.ipify.org?format=json")
-    return res.json()
 
 # ───────────────────────────────────────
 # 로그인
