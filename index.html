@@ -1317,7 +1317,8 @@ async function evaluateSubmission(uid) {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        submission_text: text
+        submission_text: text,
+        confirm_submit: true
       })
     });
 
@@ -1436,7 +1437,8 @@ async function evaluateImage(event) {
       body: JSON.stringify({
         session_id: sessionId,
         image_path: uploaded.path,
-        mime_type: uploaded.mime_type
+        mime_type: uploaded.mime_type,
+        confirm_submit: true
       })
     });
 
