@@ -3,8 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>수행평가 AI 코치</title>
+<title>위닝 수행평가 서포터</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #f0f4ff;
@@ -181,7 +182,7 @@
 
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <h1>📚 수행평가 AI 코치</h1>
+    <h1>📚 위닝 수행평가 서포터</h1>
     <span>AI-Powered Assessment Helper</span>
   </div>
   <div class="sidebar-section">메뉴</div>
@@ -196,7 +197,7 @@
   </div>
   <div class="sidebar-bottom">
     <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px;">진행 단계</div>
-    <div class="step-item current" id="step1"><div class="step-dot">1</div><span>과목 입력</span></div>
+    <div class="step-item current" id="step1"><div class="step-dot">1</div><span>학년·과목 입력</span></div>
     <div class="step-item" id="step2"><div class="step-dot">2</div><span>안내문 업로드</span></div>
     <div class="step-item" id="step3"><div class="step-dot">3</div><span>주제 추천</span></div>
     <div class="step-item" id="step4"><div class="step-dot">4</div><span>자료 검색</span></div>
@@ -206,12 +207,12 @@
 
 <div class="main">
   <div class="connecting-banner" id="connectingBanner">
-    ⏳ 서버 시작 중... 처음 접속 시 최대 1분 소요될 수 있어요. 잠시만 기다려주세요!
+    ⏳ 서버 시작 중...
   </div>
 
   <header class="header">
     <div class="header-left">
-      <span class="header-subject" id="headerTitle">수행평가 AI 코치</span>
+      <span class="header-subject" id="headerTitle">위닝 수행평가 서포터</span>
       <span class="header-badge" id="headerBadge">새 세션</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
@@ -325,7 +326,7 @@
   ">
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:40px;margin-bottom:12px;">📚</div>
-      <h2 style="font-size:20px;font-weight:800;color:var(--text);">수행평가 AI 코치</h2>
+      <h2 style="font-size:20px;font-weight:800;color:var(--text);">위닝 수행평가 서포터</h2>
       <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">선생님께 받은 코드와 이름을 입력하세요</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
@@ -353,9 +354,15 @@
 </div>
 
 <script>
-const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000'
-  : 'https://suhaengpyeong.onrender.com';
+const API = '/api';
+
+// 반드시 Supabase Project Settings → API에서 가져온 값을 입력하세요.
+// SERVICE_ROLE_KEY가 아니라 anon public key만 여기에 넣습니다.
+const SUPABASE_URL = 'https://orwngbyiylchpzufwvej.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yd25nYnlpeWxjaHB6dWZ3dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzkyMzIsImV4cCI6MjA4ODQ1NTIzMn0.LnKlvHTo9Q_teQd-MTNpdVnGcTT27szXcO-GzGxwfmg';
+const STORAGE_BUCKET = 'assessment-images';
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let sessionId = null;
 let studentInfo = null;
@@ -401,7 +408,7 @@ function showPreviousHistory(prev) {
   prevSessionData = prev;
   addAiMsg(`반갑습니다, <strong>${studentName}</strong>님! 👋<br><br>
     지난번 기록을 불러왔어요.<br>
-    📚 과목: <strong>${prev.subject||'-'}</strong><br>
+    📚 학년/과목: <strong>${prev.grade||'-'} / ${prev.subject||'-'}</strong><br>
     🎯 선택 주제: <strong>${prev.selected_topic||'아직 선택 전'}</strong><br><br>
     이어서 하시겠어요?`, true);
   const html = `
@@ -418,6 +425,7 @@ function resumeFromPrev() {
   if(!prevSessionData) return;
   const p = prevSessionData;
   let topicObj = { title: p.selected_topic || '', details: {} };
+
   if(p.selected_topic_detail) {
     const details = {};
     p.selected_topic_detail.split('\n').forEach(line => {
@@ -427,22 +435,32 @@ function resumeFromPrev() {
     topicObj.details = details;
   } else if(p.topics && p.selected_topic) {
     const parsed = parseTopics(p.topics);
-    const match = parsed.find(t => t.title && t.title.includes(p.selected_topic.slice(0,10)));
+    const match = parsed.find(t => t.title && t.title.includes((p.selected_topic || '').slice(0,10)));
     if(match) topicObj = match;
   }
-  resumeSession(p.subject||'', p.career||'', p.selected_topic||'', p.topics||'', topicObj);
+
+  resumeSession(
+    p.subject || '',
+    p.career || '',
+    p.selected_topic || '',
+    p.topics || '',
+    topicObj,
+    p.grade || '고등학생'
+  );
 }
 
-function resumeSession(subject, career, topic, topics, topicObj) {
-  studentInfo = { subject, career, prevTopic: '' };
+function resumeSession(subject, career, topic, topics, topicObj, grade = '고등학생') {
+  studentInfo = { grade, subject, career, prevTopic: '' };
   selectedTopic = topic || null;
-  document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+
+  document.getElementById('headerTitle').textContent = `${grade && grade !== '고등학생' ? grade + ' ' : ''}${subject || '수행평가'} 수행평가`;
   document.getElementById('headerBadge').textContent = career || studentName;
 
   document.querySelectorAll('.header-tab').forEach((t,i) => t.classList.toggle('active', i===0));
   document.getElementById('panelChat').style.display = 'flex';
   document.getElementById('panelResources').style.display = 'none';
   document.getElementById('panelEval').style.display = 'none';
+
   const rightPanel = document.querySelector('.right-panel');
   rightPanel.classList.remove('fullwidth');
 
@@ -482,13 +500,19 @@ function updateCallUsage(count, limit) {
 
 function showWelcome(name) {
   document.getElementById('chatMessages').innerHTML = '';
+
   const topicSummary = document.getElementById('panelTopicSummary');
   if(topicSummary) topicSummary.style.display = 'none';
+
   document.querySelector('.right-panel').style.display = 'none';
   selectedTopic = null;
+  assessmentInfo = null;
+  pendingImages = [];
+
   addAiMsg(`안녕하세요, <strong>${name}</strong>님! 👋<br><br>
     수행평가를 도와드릴게요!<br>
-    먼저 <strong>과목</strong>과 <strong>같은 과목에서 이전에 했던 주제</strong>를 알려주세요 📝`, true);
+    먼저 <strong>학년, 과목, 같은 과목에서 이전에 했던 주제, 희망 진로</strong>를 알려주세요 📝`, true);
+
   showPreUploadForm();
 }
 
@@ -496,6 +520,7 @@ function showPreUploadForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
   wrap.id = 'preUploadFormWrap';
+
   wrap.innerHTML = `
     <div class="ai-avatar">🤖</div>
     <div style="width:100%">
@@ -503,46 +528,77 @@ function showPreUploadForm() {
       <div class="info-form" id="preUploadForm">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="preSubjectInput">
-              <option>국어</option><option>영어</option><option>수학</option>
-              <option>사회/역사</option><option>과학</option><option>기타</option>
+            <label class="form-label">학년 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preGradeInput">
+              <option>고1</option>
+              <option>고2</option>
+              <option>고3</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label class="form-label">같은 과목에서 이전에 한 주제</label>
-            <input class="form-input" id="prePrevTopicInput" placeholder="" />
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSubjectInput">
+              <option>국어</option>
+              <option>영어</option>
+              <option>수학</option>
+              <option>사회/역사</option>
+              <option>과학</option>
+              <option>기타</option>
+            </select>
           </div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">같은 과목에서 이전에 한 주제</label>
+          <input class="form-input" id="prePrevTopicInput" placeholder="예: 항생제 내성, 조건부확률, 소설 속 인물 심리 분석" />
+        </div>
+
         <div class="form-group">
           <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
-          <input class="form-input" id="preCareerInput" placeholder=""
+          <input class="form-input" id="preCareerInput" placeholder="예: 의학, 경영, 반도체, 약학, 항공"
             onkeydown="if(event.key==='Enter') submitPreForm()" />
         </div>
+
         <button class="form-submit" onclick="submitPreForm()">다음 단계 →</button>
       </div>
-    </div>`;
+    </div>
+  `;
+
   document.getElementById('chatMessages').appendChild(wrap);
   scrollBot();
 }
 
 function submitPreForm() {
-  const subject  = document.getElementById('preSubjectInput').value;
+  const grade = document.getElementById('preGradeInput').value;
+  const subject = document.getElementById('preSubjectInput').value;
   const prevTopic = document.getElementById('prePrevTopicInput').value.trim();
-  const career   = document.getElementById('preCareerInput').value.trim();
+  const career = document.getElementById('preCareerInput').value.trim();
 
-  if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
+  if(!career) {
+    showToast('희망 진로를 입력해주세요!');
+    return;
+  }
 
   document.getElementById('preUploadForm').style.display = 'none';
   updateStep(2);
 
-  studentInfo = { ...(studentInfo || {}), subject, prevTopic, career };
-  document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+  studentInfo = {
+    ...(studentInfo || {}),
+    grade,
+    subject,
+    prevTopic,
+    career
+  };
+
+  document.getElementById('headerTitle').textContent = `${grade} ${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
+  addUserMsg(`학년: ${grade} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
+
   addAiMsg(`좋아요! 이제 <strong>수행평가 안내문 사진</strong>을 올려주세요 📄<br>
-    <span style="font-size:12px;color:var(--text-sub);">여러 장도 한번에 업로드할 수 있어요!</span>`, true);
+    <span style="font-size:12px;color:var(--text-sub);">여러 장도 한 번에 업로드할 수 있어요!</span>`, true);
+
   showUploadArea();
 }
 
@@ -577,8 +633,21 @@ function showUploadArea() {
 }
 
 function addImages(event) {
-  const files = Array.from(event.target.files);
+  const files = Array.from(event.target.files || []);
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+  const maxSize = 10 * 1024 * 1024;
+
   files.forEach(file => {
+    if(!allowedTypes.includes(file.type)) {
+      showToast('JPG, PNG, WEBP 이미지만 업로드할 수 있어요.');
+      return;
+    }
+
+    if(file.size > maxSize) {
+      showToast('이미지는 10MB 이하만 업로드할 수 있어요.');
+      return;
+    }
+
     const reader = new FileReader();
     reader.onload = (e) => {
       pendingImages.push({ file, dataUrl: e.target.result });
@@ -586,6 +655,7 @@ function addImages(event) {
     };
     reader.readAsDataURL(file);
   });
+
   event.target.value = '';
 }
 
@@ -616,9 +686,73 @@ function removeImage(idx) {
   renderImagePreviews();
 }
 
+async function uploadImageToStorage(file, purpose = 'assessment') {
+  if (!sessionId) {
+    throw new Error('세션이 없습니다. 다시 로그인해주세요.');
+  }
+
+  if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE_URL')) {
+    throw new Error('index.html의 SUPABASE_URL 값을 실제 Supabase URL로 바꿔주세요.');
+  }
+
+  if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_PUBLIC_KEY')) {
+    throw new Error('index.html의 SUPABASE_ANON_KEY 값을 실제 anon public key로 바꿔주세요.');
+  }
+
+  const contentType = file.type || 'image/jpeg';
+
+  const signedRes = await apiFetch(`${API}/storage-signed-upload-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      session_id: sessionId,
+      file_name: file.name || 'image.jpg',
+      content_type: contentType,
+      purpose
+    })
+  });
+
+  const signedData = await signedRes.json();
+
+  if (!signedRes.ok || !signedData.token || !signedData.path) {
+    throw new Error(signedData.detail || '이미지 업로드 주소 생성에 실패했습니다.');
+  }
+
+  const { error: uploadError } = await sb
+    .storage
+    .from(STORAGE_BUCKET)
+    .uploadToSignedUrl(
+      signedData.path,
+      signedData.token,
+      file,
+      {
+        contentType,
+        cacheControl: '3600'
+      }
+    );
+
+  if (uploadError) {
+    throw new Error(uploadError.message || 'Supabase Storage 업로드에 실패했습니다.');
+  }
+
+  return {
+    path: signedData.path,
+    mime_type: contentType
+  };
+}
+
 async function uploadAllImages() {
-  if(!pendingImages.length) { showToast('사진을 먼저 추가해주세요!'); return; }
-  if(!sessionId) { showToast('서버 연결 중이에요. 잠시 후 다시 시도해주세요.'); return; }
+  if(!pendingImages.length) {
+    showToast('사진을 먼저 추가해주세요!');
+    return;
+  }
+
+  if(!sessionId) {
+    showToast('서버 연결 중이에요. 잠시 후 다시 시도해주세요.');
+    return;
+  }
 
   const uploadWrap = document.getElementById('uploadAreaWrap');
   if(uploadWrap) uploadWrap.style.opacity = '0.5';
@@ -629,25 +763,45 @@ async function uploadAllImages() {
 
   try {
     let combinedResult = '';
+
     for(let i = 0; i < pendingImages.length; i++) {
-      const formData = new FormData();
-      formData.append('session_id', sessionId);
-      formData.append('image', pendingImages[i].file);
-      formData.append('subject', studentInfo?.subject || '');
-      formData.append('career', studentInfo?.career || '');
-      const res = await apiFetch(`${API}/analyze-assessment`, { method:'POST', body:formData });
+      const uploaded = await uploadImageToStorage(pendingImages[i].file, 'assessment');
+
+      const res = await apiFetch(`${API}/analyze-assessment-storage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          session_id: sessionId,
+          image_path: uploaded.path,
+          mime_type: uploaded.mime_type,
+          subject: studentInfo?.subject || '',
+          career: studentInfo?.career || '',
+          grade: studentInfo?.grade || '고등학생'
+        })
+      });
+
       const data = await res.json();
-      if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
+      if(!res.ok) {
+        throw new Error(data.detail || '분석 중 오류가 발생했습니다.');
+      }
+
+      if(data.call_count !== undefined) {
+        updateCallUsage(data.call_count, data.call_limit || 0);
+      }
+
       combinedResult += (pendingImages.length > 1 ? `\n\n[사진 ${i+1}]\n` : '') + data.assessment_info;
     }
 
     removeLoading();
     assessmentInfo = combinedResult;
+
     if(uploadWrap) uploadWrap.remove();
     pendingImages = [];
 
     addAiMsg(`✅ <strong>안내문 분석 완료!</strong> 이제 주제를 추천해드릴게요!`, true);
     await requestTopics();
+
   } catch(e) {
     removeLoading();
     if(uploadWrap) uploadWrap.style.opacity = '1';
@@ -660,6 +814,7 @@ async function uploadAllImages() {
 // ───────────────────────────────────────
 async function requestTopics() {
   addLoading();
+
   try {
     const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
@@ -673,7 +828,13 @@ async function requestTopics() {
         assessment_info: assessmentInfo || null
       })
     });
+
     const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '주제 추천 중 오류가 발생했어요.');
+    }
+
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
@@ -709,7 +870,7 @@ async function submitCareerOnly() {
   if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
   document.getElementById('careerForm').style.display = 'none';
 
-  studentInfo = { ...studentInfo, career };
+  studentInfo = { ...(studentInfo || {}), career };
   document.getElementById('headerBadge').textContent = career;
 
   addUserMsg(`희망 진로: ${career}`);
@@ -721,13 +882,20 @@ async function submitCareerOnly() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        grade: '고등학생',
-        subject: studentInfo.subject,
+        grade: studentInfo?.grade || '고등학생',
+        subject: studentInfo?.subject || '국어',
         desired_career: career,
+        previous_topic: studentInfo?.prevTopic || '',
         assessment_info: assessmentInfo || null
       })
     });
+
     const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '오류가 발생했어요. 다시 시도해주세요.');
+    }
+
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
@@ -754,6 +922,7 @@ function skipToFormFromUpload() {
 function showSkipForm() {
   const wrap = document.createElement('div');
   wrap.className = 'msg-ai';
+
   wrap.innerHTML = `
     <div class="ai-avatar">🤖</div>
     <div style="width:100%">
@@ -761,33 +930,53 @@ function showSkipForm() {
       <div class="info-form" id="skipForm">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="skipSubjectInput">
-              <option>국어</option><option>영어</option><option>수학</option>
-              <option>사회/역사</option><option>과학</option><option>기타</option>
+            <label class="form-label">학년 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipGradeInput">
+              <option>고1</option>
+              <option>고2</option>
+              <option>고3</option>
             </select>
           </div>
+
           <div class="form-group">
-            <label class="form-label">같은 과목에서 이전에 한 주제</label>
-            <input class="form-input" id="skipPrevTopicInput" placeholder=""/>
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSubjectInput">
+              <option>국어</option>
+              <option>영어</option>
+              <option>수학</option>
+              <option>사회/역사</option>
+              <option>과학</option>
+              <option>기타</option>
+            </select>
           </div>
         </div>
+
+        <div class="form-group">
+          <label class="form-label">같은 과목에서 이전에 한 주제</label>
+          <input class="form-input" id="skipPrevTopicInput" placeholder="예: 항생제 내성, 조건부확률, 소설 속 인물 심리 분석"/>
+        </div>
+
         <div class="form-group">
           <label class="form-label">대략적인 수행평가 정보 <span style="color:#ef4444;">*</span></label>
-          <textarea class="form-textarea" id="skipAssessInfoInput" placeholder=""></textarea>
+          <textarea class="form-textarea" id="skipAssessInfoInput" placeholder="수행평가 유형, 제출 형식, 평가 기준, 필수 포함 내용 등을 적어주세요."></textarea>
         </div>
+
         <div class="form-group">
           <label class="form-label">희망 진로 <span style="color:#ef4444;">*</span></label>
-          <input class="form-input" id="skipCareerInput" placeholder=""/>
+          <input class="form-input" id="skipCareerInput" placeholder="예: 의학, 경영, 반도체, 약학, 항공"/>
         </div>
+
         <button class="form-submit" onclick="submitSkipForm()">✨ 주제 추천받기</button>
       </div>
-    </div>`;
+    </div>
+  `;
+
   document.getElementById('chatMessages').appendChild(wrap);
   scrollBot();
 }
 
 async function submitSkipForm() {
+  const grade      = document.getElementById('skipGradeInput').value;
   const subject    = document.getElementById('skipSubjectInput').value;
   const prevTopic  = document.getElementById('skipPrevTopicInput').value.trim();
   const assessInfo = document.getElementById('skipAssessInfoInput').value.trim();
@@ -798,12 +987,13 @@ async function submitSkipForm() {
 
   document.getElementById('skipForm').style.display = 'none';
 
-  studentInfo = { subject, prevTopic, career };
+  studentInfo = { grade, subject, prevTopic, career };
   assessmentInfo = assessInfo;
-  document.getElementById('headerTitle').textContent = `${subject} 수행평가`;
+
+  document.getElementById('headerTitle').textContent = `${grade} ${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`과목: ${subject}${prevTopic?' / 이전: '+prevTopic:''} / 진로: ${career}`);
+  addUserMsg(`학년: ${grade} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
   addLoading();
 
   try {
@@ -812,13 +1002,20 @@ async function submitSkipForm() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        grade: '고등학생',
+        grade,
         subject,
         desired_career: career,
+        previous_topic: prevTopic,
         assessment_info: assessInfo
       })
     });
+
     const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '오류가 발생했어요. 다시 시도해주세요.');
+    }
+
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(4);
@@ -933,25 +1130,39 @@ async function confirmTopic(idx) {
     c.style.cursor = 'default';
     c.style.opacity = '0.5';
   });
+
   const card = document.getElementById(`topicCard${idx}`);
   if(card) {
     card.classList.add('selected');
     card.style.opacity = '1';
     card.style.border = '2px solid var(--primary)';
   }
+
   selectedTopic = t.title;
   renderTopicSummary(t);
 
   addUserMsg(`"${t.title}" 으로 확정할게요!`);
   addLoading();
+
   const detailText = Object.entries(t.details||{}).map(([k,v])=>`${k}: ${v}`).join('\n');
+
   try {
     const res = await apiFetch(`${API}/find-resources`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id:sessionId, selected_topic:t.title, selected_topic_detail: detailText })
+      body: JSON.stringify({
+        session_id:sessionId,
+        selected_topic:t.title,
+        selected_topic_detail: detailText
+      })
     });
+
     const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '자료 추천 중 오류가 발생했어요.');
+    }
+
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(5);
@@ -960,7 +1171,7 @@ async function confirmTopic(idx) {
     if(!document.querySelector('.submission-textarea')) showEvalInput();
   } catch(e) {
     removeLoading();
-    addAiMsg(`❌ ${e.message || '자료 검색 중 오류가 발생했어요.'}`);
+    addAiMsg(`❌ ${e.message || '자료 추천 중 오류가 발생했어요.'}`);
   }
 }
 
@@ -977,6 +1188,7 @@ function renderTopicSummary(t) {
       <div style="font-size:15px;font-weight:700;color:var(--text);line-height:1.5;">${esc(t.title)}</div>
     </div>
     <div class="meta-tags" style="margin-bottom:16px;">
+      <span class="meta-tag tag-grade">${studentInfo?.grade||''}</span>
       <span class="meta-tag tag-subject">${studentInfo?.subject||''}</span>
       <span class="meta-tag tag-career">${studentInfo?.career||''}</span>
     </div>
@@ -1004,6 +1216,7 @@ function renderResources(text, topic) {
       <div style="font-size:13px;color:var(--text-sub);margin-bottom:6px;">선택 주제</div>
       <div style="font-size:14px;font-weight:700;margin-bottom:8px;">${esc(topic)}</div>
       <div class="meta-tags">
+        <span class="meta-tag tag-grade">${studentInfo?.grade||''}</span>
         <span class="meta-tag tag-subject">${studentInfo?.subject||''}</span>
         <span class="meta-tag tag-career">${studentInfo?.career||''}</span>
       </div>
@@ -1089,19 +1302,39 @@ function switchEvalType(type, uid) {
 async function evaluateSubmission(uid) {
   const area = document.getElementById(`evalTextArea_${uid}`);
   const text = area ? area.querySelector('textarea')?.value?.trim() : null;
-  if(!text) { showToast('평가할 내용을 입력해주세요!'); return; }
+
+  if(!text) {
+    showToast('평가할 내용을 입력해주세요!');
+    return;
+  }
+
   addUserMsg(text.slice(0,80)+(text.length>80?'...':''));
   addLoading();
-  const formData = new FormData();
-  formData.append('session_id', sessionId);
-  formData.append('submission_text', text);
+
   try {
-    const res = await apiFetch(`${API}/evaluate-text`, { method:'POST', body:formData });
+    const res = await apiFetch(`${API}/evaluate-text`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        session_id: sessionId,
+        submission_text: text
+      })
+    });
+
     const data = await res.json();
-    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
+    if(!res.ok) {
+      throw new Error(data.detail || '평가 중 오류가 발생했습니다.');
+    }
+
+    if(data.call_count !== undefined) {
+      updateCallUsage(data.call_count, data.call_limit || 0);
+    }
+
     removeLoading();
     addAiMsg('평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인해보세요 📊', true, true);
     renderEvaluation(data.evaluation);
+
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${e.message || '평가 중 오류가 발생했어요.'}`);
@@ -1121,15 +1354,30 @@ function renderEvaluation(text) {
 
 async function retryTopics() {
   if(!studentInfo) return;
+
   addUserMsg('다른 주제로 다시 추천해주세요!');
   addLoading();
+
   try {
     const res = await apiFetch(`${API}/recommend-topics`, {
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ session_id:sessionId, grade:'고등학생', subject:studentInfo.subject, desired_career:studentInfo.career })
+      body: JSON.stringify({
+        session_id: sessionId,
+        grade: studentInfo?.grade || '고등학생',
+        subject: studentInfo?.subject || '국어',
+        desired_career: studentInfo?.career || '',
+        previous_topic: studentInfo?.prevTopic || '',
+        assessment_info: assessmentInfo || null
+      })
     });
+
     const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '오류가 발생했어요.');
+    }
+
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     showTopicCards(data.topics);
@@ -1166,25 +1414,51 @@ async function sendMessage() {
 
 async function evaluateImage(event) {
   const file = event.target.files[0];
+  event.target.value = '';
+
   if(!file) return;
+
+  if(!sessionId) {
+    showToast('세션이 없습니다. 다시 로그인해주세요.');
+    return;
+  }
+
   addUserMsg(`📷 이미지로 평가 요청: ${file.name}`);
-  addLoading(); switchTab('eval');
-  const formData = new FormData();
-  formData.append('session_id', sessionId);
-  formData.append('image', file);
+  addLoading();
+  switchTab('eval');
+
   try {
-    const res = await apiFetch(`${API}/evaluate-image`, { method:'POST', body:formData });
+    const uploaded = await uploadImageToStorage(file, 'evaluation');
+
+    const res = await apiFetch(`${API}/evaluate-image-storage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        session_id: sessionId,
+        image_path: uploaded.path,
+        mime_type: uploaded.mime_type
+      })
+    });
+
     const data = await res.json();
-    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
+    if(!res.ok) {
+      throw new Error(data.detail || '이미지 평가 중 오류가 발생했습니다.');
+    }
+
+    if(data.call_count !== undefined) {
+      updateCallUsage(data.call_count, data.call_limit || 0);
+    }
+
     removeLoading();
     addAiMsg('이미지 평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인하세요 📊', true);
     renderEvaluation(data.evaluation);
     showToast('✅ 이미지 평가 완료!');
+
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${e.message || '이미지 평가 중 오류가 발생했어요.'}`);
   }
-  event.target.value = '';
 }
 
 // ───────────────────────────────────────
@@ -1304,10 +1578,9 @@ function closeScrapModalBtn() { document.getElementById('scrapModal').classList.
 function setActiveMenu(el) { document.querySelectorAll('.sidebar-item').forEach(i=>i.classList.remove('active')); el.classList.add('active'); }
 
 async function init() {
-  try { await fetch(`${API}/`); } catch(e) {
-    document.getElementById('connectingBanner').classList.add('show');
-    setTimeout(async()=>{ try { await fetch(`${API}/`); document.getElementById('connectingBanner').classList.remove('show'); } catch(e2){} },30000);
-  }
+  // Vercel API는 서버리스 함수라 별도 서버 깨우기 과정이 필요 없습니다.
+  const banner = document.getElementById('connectingBanner');
+  if(banner) banner.classList.remove('show');
 }
 init();
 updateScrapCount();
