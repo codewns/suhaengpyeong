@@ -14,16 +14,42 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { session_id, submission_text } = req.body || {};
+    const {
+      session_id,
+      submission_text,
+      confirm_submit
+    } = req.body || {};
 
-    if (!session_id || !submission_text) {
-      return res.status(400).json({ detail: '평가할 내용이 필요합니다.' });
+    if (!session_id) {
+      return res.status(400).json({
+        detail: 'session_id가 필요합니다.'
+      });
+    }
+
+    if (confirm_submit !== true) {
+      return res.status(400).json({
+        detail: '제출물 평가 버튼을 통해서만 평가할 수 있습니다.'
+      });
+    }
+
+    if (!submission_text || !submission_text.trim()) {
+      return res.status(400).json({
+        detail: '평가할 제출물이 필요합니다.'
+      });
+    }
+
+    if (submission_text.trim().length < 100) {
+      return res.status(400).json({
+        detail: '제출물이 너무 짧습니다. 실제 수행평가 제출물을 입력한 뒤 평가해주세요.'
+      });
     }
 
     const session = await getSession(session_id);
 
     if (!session?.student_code) {
-      return res.status(401).json({ detail: '로그인이 필요합니다.' });
+      return res.status(401).json({
+        detail: '로그인이 필요합니다.'
+      });
     }
 
     const usage = await incrementCallCount(session.student_code);
@@ -34,7 +60,11 @@ export default async function handler(req, res) {
       });
     }
 
-    const knowledgeBase = loadKnowledgeByGradeSubject(session.grade || '고등학생', session.subject || '국어');
+    const knowledgeBase = loadKnowledgeByGradeSubject(
+      session.grade || '고등학생',
+      session.subject || '국어'
+    );
+
     const assessmentText = session.assessment_info || '평가 기준 정보 없음';
 
     const system = `
@@ -52,6 +82,7 @@ ${knowledgeBase}
 3. 구체적 근거와 보완 방향을 제시한다.
 4. 표절 위험이 있으면 반드시 지적한다.
 5. 평가 기준과 연결해서 판단한다.
+6. 실제 제출물이 아닌 주제명, 자료 추천 결과, 빈 문장, 단순 메모처럼 보이는 경우 평가하지 말고 제출물 부족으로 안내한다.
 
 평가 항목마다 아래 형식으로 작성:
 
@@ -98,6 +129,9 @@ ${submission_text}
     });
   } catch (error) {
     console.error('evaluate text error:', error);
-    return res.status(500).json({ detail: '평가 중 오류가 발생했습니다.' });
+
+    return res.status(500).json({
+      detail: '평가 중 오류가 발생했습니다.'
+    });
   }
 }
