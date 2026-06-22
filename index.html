@@ -474,8 +474,8 @@ const CURRICULUM_2022 = {
       '정보': ['인공지능 기초', '데이터 과학', '소프트웨어와 생활'],
       '제2외국어': ['독일어 회화', '프랑스어 회화', '스페인어 회화', '중국어 회화', '일본어 회화', '러시아어 회화', '아랍어 회화', '베트남어 회화', '심화 독일어', '심화 프랑스어', '심화 스페인어', '심화 중국어', '심화 일본어', '심화 러시아어', '심화 아랍어', '심화 베트남어', '독일어권 문화', '프랑스어권 문화', '스페인어권 문화', '중국 문화', '일본 문화', '러시아 문화', '아랍 문화', '베트남 문화'],
       '한문': ['한문 고전 읽기', '언어생활과 한자'],
-      '교양': ['인간과 철학', '논리와 사고', '인간과 심리', '교육의 이해', '삶과 종교', '보건', '인간과 경제활동', '논술'],
-        
+      '교양': ['인간과 철학', '논리와 사고', '인간과 심리', '교육의 이해', '삶과 종교', '보건', '인간과 경제활동', '논술']
+    },
     '2학기': {
       '국어': ['주제 탐구 독서', '문학과 영상', '직무 의사소통', '독서 토론과 글쓰기', '매체 의사소통', '언어생활 탐구'],
       '수학': ['기하', '미적분Ⅱ', '경제 수학', '인공지능 수학', '직무 수학', '수학과 문화', '실용 통계', '수학과제 탐구'],
@@ -709,7 +709,14 @@ function resumeFromPrev() {
 }
 
 function resumeSession(subject, career, topic, topics, topicObj, grade = '고등학생') {
-  studentInfo = { grade, subject, career, prevTopic: '' };
+  studentInfo = {
+  grade,
+  gradeWithSemester: grade,
+  subject,
+  schoolType: '일반고',
+  prevTopic: '',
+  career
+};
   selectedTopic = topic || null;
 
   document.getElementById('headerTitle').textContent = `${grade && grade !== '고등학생' ? grade + ' ' : ''}${subject || '수행평가'} 수행평가`;
@@ -788,7 +795,7 @@ function showPreUploadForm() {
         <div class="form-row">
   <div class="form-group">
     <label class="form-label">학년 <span style="color:#ef4444;">*</span></label>
-    <select class="form-select" id="preGradeInput" onchange="updateCurriculumSelects('pre')">
+    <select class="form-select" id="skipGradeInput" onchange="updateCurriculumSelects('skip')">
       <option>고1</option>
       <option>고2</option>
       <option>고3</option>
@@ -797,7 +804,7 @@ function showPreUploadForm() {
 
   <div class="form-group">
     <label class="form-label">학기 <span style="color:#ef4444;">*</span></label>
-    <select class="form-select" id="preSemesterInput" onchange="updateCurriculumSelects('pre')">
+    <select class="form-select" id="skipSemesterInput" onchange="updateCurriculumSelects('skip')">
       <option>1학기</option>
       <option>2학기</option>
     </select>
@@ -807,7 +814,7 @@ function showPreUploadForm() {
 <div class="form-row">
   <div class="form-group">
     <label class="form-label">학교 유형 <span style="color:#ef4444;">*</span></label>
-    <select class="form-select" id="preSchoolTypeInput" onchange="updateCurriculumSelects('pre')">
+    <select class="form-select" id="skipSchoolTypeInput" onchange="updateCurriculumSelects('skip')">
       <option>일반고</option>
       <option>자율형 사립고</option>
       <option>특수목적고</option>
@@ -816,19 +823,19 @@ function showPreUploadForm() {
 
   <div class="form-group">
     <label class="form-label">교과군 <span style="color:#ef4444;">*</span></label>
-    <select class="form-select" id="preSubjectGroupInput" onchange="updateCurriculumSelects('pre')"></select>
+    <select class="form-select" id="skipSubjectGroupInput" onchange="updateCurriculumSelects('skip')"></select>
   </div>
 </div>
 
 <div class="form-row">
   <div class="form-group">
     <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
-    <select class="form-select" id="preSubjectInput" onchange="updateCurriculumSelects('pre')"></select>
+    <select class="form-select" id="skipSubjectInput" onchange="updateCurriculumSelects('skip')"></select>
   </div>
 
-  <div class="form-group" id="preCustomSubjectWrap" style="display:none;">
+  <div class="form-group" id="skipCustomSubjectWrap" style="display:none;">
     <label class="form-label">직접 입력 과목명</label>
-    <input class="form-input" id="preCustomSubjectInput" placeholder="예: 과학과제 연구, 고급 생명과학, 학교 자체 편성 과목" />
+    <input class="form-input" id="skipCustomSubjectInput" placeholder="예: 과학과제 연구, 고급 생명과학, 학교 자체 편성 과목" />
   </div>
 </div>
 
@@ -855,7 +862,8 @@ function showPreUploadForm() {
   `;
 
   document.getElementById('chatMessages').appendChild(wrap);
-  scrollBot();
+updateCurriculumSelects('pre');
+scrollBot();
 }
 
 function submitPreForm() {
@@ -1186,13 +1194,14 @@ async function submitCareerOnly() {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        session_id: sessionId,
-        grade: studentInfo?.grade || '고등학생',
-        subject: studentInfo?.subject || '국어',
-        desired_career: career,
-        previous_topic: studentInfo?.prevTopic || '',
-        assessment_info: assessmentInfo || null
-      })
+  session_id: sessionId,
+  grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
+  subject: studentInfo?.subject || '국어',
+  school_type: studentInfo?.schoolType || '일반고',
+  desired_career: career,
+  previous_topic: studentInfo?.prevTopic || '',
+  assessment_info: assessmentInfo || null
+})
     });
 
     const data = await res.json();
@@ -1817,13 +1826,14 @@ async function retryTopics() {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        session_id: sessionId,
-        grade: studentInfo?.grade || '고등학생',
-        subject: studentInfo?.subject || '국어',
-        desired_career: studentInfo?.career || '',
-        previous_topic: studentInfo?.prevTopic || '',
-        assessment_info: assessmentInfo || null
-      })
+  session_id: sessionId,
+  grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
+  subject: studentInfo?.subject || '국어',
+  school_type: studentInfo?.schoolType || '일반고',
+  desired_career: studentInfo?.career || '',
+  previous_topic: studentInfo?.prevTopic || '',
+  assessment_info: assessmentInfo || null
+})
     });
 
     const data = await res.json();
