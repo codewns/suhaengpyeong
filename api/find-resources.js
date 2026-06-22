@@ -6,6 +6,7 @@ import {
   incrementCallCount
 } from './_lib/sessions.js';
 import { callText } from './_lib/gemini.js';
+import { saveAssessmentReport } from './_lib/reports.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -134,21 +135,36 @@ ${session.assessment_info || '안내문 정보 없음'}
     const result = await callText(system, userMsg);
 
     const updated = await updateSession(session_id, {
-      selected_topic,
-      selected_topic_detail,
-      resources: result
-    });
+  selected_topic,
+  selected_topic_detail,
+  resources: result
+});
 
-    await dbSaveConversation(updated);
+await dbSaveConversation(updated);
 
-    return res.status(200).json({
-      status: 'success',
-      resources: result,
-      plan_report: result,
-      report_id: null,
-      call_count: usage.count,
-      call_limit: usage.limit
-    });
+const savedReport = await saveAssessmentReport({
+  student_code: session.student_code,
+  student_name: session.student_name || '',
+  report_type: 'plan',
+  title: selected_topic,
+  grade,
+  subject,
+  career,
+  selected_topic,
+  report_content: result,
+  meta: {
+    selected_topic_detail
+  }
+});
+
+return res.status(200).json({
+  status: 'success',
+  resources: result,
+  plan_report: result,
+  report_id: savedReport?.id || null,
+  call_count: usage.count,
+  call_limit: usage.limit
+});
   } catch (error) {
     console.error('find resources error:', error);
     return res.status(500).json({ detail: '자료 추천 중 오류가 발생했습니다.' });
