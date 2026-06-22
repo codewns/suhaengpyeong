@@ -1,4 +1,3 @@
-import { loadStageKnowledgeByGradeSubject } from './_lib/knowledge.js';
 import { loadDynamicAssessmentKnowledge } from './_lib/dynamic-knowledge.js';
 import {
   getSession,
@@ -42,7 +41,6 @@ export default async function handler(req, res) {
     const subject = session.subject || '국어';
     const career = session.career || '';
 
-    const resourceKnowledge = loadStageKnowledgeByGradeSubject(grade, subject, 'resources');
 
     const dynamicResourceKnowledge = await loadDynamicAssessmentKnowledge({
       grade,
@@ -60,9 +58,6 @@ export default async function handler(req, res) {
 당신은 수행평가 자료 추천 및 설계 리포트 작성 전문가입니다.
 이 단계에서는 자료 추천용 데이터만 사용합니다.
 주제 추천용 데이터는 참고하지 않습니다.
-
-[자료 추천용 내부 지식 데이터]
-${resourceKnowledge}
 
 [홈페이지 위닝 수행 자료 DB]
 ${dynamicResourceKnowledge}
