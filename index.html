@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>위닝 수행평가 서포터</title>
+<title>위닝AI 수행평가 서비스</title>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -176,24 +176,52 @@
   .eval-type-tabs { display:flex; gap:8px; margin-top:10px; }
   .eval-type-tab { flex:1; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:13px; cursor:pointer; background:#fff; color:var(--text-sub); font-family:'Noto Sans KR',sans-serif; font-weight:500; transition:all 0.2s; text-align:center; }
   .eval-type-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
+
+  .report-modal { width:920px; max-width:94vw; max-height:88vh; }
+  .report-layout { display:grid; grid-template-columns:1fr 220px; gap:18px; align-items:start; }
+  .report-paper { background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow); }
+  .report-paper-title { font-size:20px; font-weight:900; color:var(--text); margin-bottom:8px; line-height:1.4; }
+  .report-paper-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
+  .report-actions { position:sticky; top:0; display:flex; flex-direction:column; gap:10px; }
+  .report-action-card { border:1px solid var(--border); border-radius:16px; padding:14px; background:#fafbff; }
+  .report-action-btn { width:100%; padding:12px 14px; border:none; border-radius:12px; background:var(--primary); color:#fff; font-size:13px; font-weight:800; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
+  .report-action-btn.secondary { background:#fff; color:var(--text); border:1px solid var(--border); }
+  .report-text { white-space:pre-wrap; font-size:13px; line-height:1.85; color:var(--text); }
+  .writing-form { border:1px solid var(--border); border-radius:16px; background:#fff; padding:16px; margin-top:12px; }
+  .writing-form-title { font-size:14px; font-weight:800; margin-bottom:10px; }
+  .writing-field { margin-bottom:12px; }
+  .writing-label { font-size:12px; font-weight:800; color:var(--primary); margin-bottom:6px; display:block; }
+  .writing-input, .writing-textarea { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; outline:none; line-height:1.7; background:#fafbff; }
+  .writing-textarea { min-height:110px; resize:vertical; }
+  .writing-textarea.body { min-height:180px; }
+  .report-list-item { border:1px solid var(--border); border-radius:14px; padding:15px; margin-bottom:12px; cursor:pointer; transition:all 0.2s; background:#fff; }
+  .report-list-item:hover { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
+  .report-list-title { font-size:14px; font-weight:800; margin-bottom:5px; line-height:1.45; }
+  .report-list-meta { font-size:11px; color:var(--text-sub); display:flex; flex-wrap:wrap; gap:6px; }
+  @media (max-width:900px) { .report-layout { grid-template-columns:1fr; } .report-actions { position:relative; } }
+
 </style>
 </head>
 <body>
 
 <aside class="sidebar">
   <div class="sidebar-logo">
-    <h1>📚 위닝 수행평가 서포터</h1>
+    <h1>📚 위닝AI 수행평가 서비스</h1>
     <span>AI-Powered Assessment Helper</span>
   </div>
   <div class="sidebar-section">메뉴</div>
   <div class="sidebar-item active" onclick="setActiveMenu(this)">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
-    AI 채팅
+    위닝AI 채팅
   </div>
   <div class="sidebar-item" onclick="setActiveMenu(this); openScrapModal()">
     <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/></svg>
     나의 스크랩
     <span id="scrapCount" style="margin-left:auto;background:var(--primary);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;display:none;">0</span>
+  </div>
+  <div class="sidebar-item" onclick="setActiveMenu(this); openReportListModal()">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+    저장 리포트
   </div>
   <div class="sidebar-bottom">
     <div style="font-size:10px;color:rgba(255,255,255,0.3);letter-spacing:0.8px;text-transform:uppercase;margin-bottom:12px;">진행 단계</div>
@@ -212,7 +240,7 @@
 
   <header class="header">
     <div class="header-left">
-      <span class="header-subject" id="headerTitle">위닝 수행평가 서포터</span>
+      <span class="header-subject" id="headerTitle">위닝AI 수행평가 서비스</span>
       <span class="header-badge" id="headerBadge">새 세션</span>
     </div>
     <div style="display:flex;align-items:center;gap:16px;">
@@ -296,8 +324,28 @@
   </div>
 </div>
 
-<!-- 이미지 평가용 인풋 -->
-<input type="file" id="evalImageInput" style="display:none" accept="image/*" onchange="evaluateImage(event)">
+<!-- 리포트 보기 모달 -->
+<div class="modal-overlay" id="reportModal" onclick="if(event.target===this)closeReportModal()">
+  <div class="modal report-modal">
+    <div class="modal-header">
+      <span class="modal-title" id="reportModalTitle">수행평가 리포트</span>
+      <button class="modal-close" onclick="closeReportModal()">✕</button>
+    </div>
+    <div class="modal-body" id="reportModalBody"></div>
+  </div>
+</div>
+
+<!-- 저장 리포트 목록 모달 -->
+<div class="modal-overlay" id="reportListModal" onclick="if(event.target===this)closeReportListModal()">
+  <div class="modal" style="width:620px;">
+    <div class="modal-header">
+      <span class="modal-title">📁 저장 리포트</span>
+      <button class="modal-close" onclick="closeReportListModal()">✕</button>
+    </div>
+    <div class="modal-body" id="reportListModalBody"></div>
+  </div>
+</div>
+
 
 <!-- 주제 상세 모달 -->
 <div class="modal-overlay" id="topicModal" onclick="if(event.target===this)closeTopicModal()">
@@ -326,7 +374,7 @@
   ">
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:40px;margin-bottom:12px;">📚</div>
-      <h2 style="font-size:20px;font-weight:800;color:var(--text);">위닝 수행평가 서포터</h2>
+      <h2 style="font-size:20px;font-weight:800;color:var(--text);">위닝AI 수행평가 서비스</h2>
       <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">선생님께 받은 코드와 이름을 입력하세요</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:12px;">
@@ -371,6 +419,9 @@ let assessmentInfo = null;
 let studentName = null;
 let studentCode = null;
 let prevSessionData = null;
+let latestPlanReport = null;
+let latestPlanReportId = null;
+let latestEvaluationReportId = null;
 
 let pendingImages = [];
 
@@ -524,7 +575,7 @@ function showPreUploadForm() {
   wrap.innerHTML = `
     <div class="ai-avatar">🤖</div>
     <div style="width:100%">
-      <div class="ai-name">AI 수행평가 코치</div>
+      <div class="ai-name">위닝AI 수행평가 서포터</div>
       <div class="info-form" id="preUploadForm">
         <div class="form-row">
           <div class="form-group">
@@ -1166,9 +1217,12 @@ async function confirmTopic(idx) {
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
     removeLoading();
     updateStep(5);
-    addAiMsg(`좋아요! 🌟 맞춤 자료 탭에서 추천 자료를 확인하세요!`, true, true);
+    latestPlanReport = data.plan_report || data.resources || '';
+    latestPlanReportId = data.report_id || null;
+    addAiMsg(`분석이 끝났어요. 팝업창에서 <strong>수행평가 설계 리포트</strong>를 확인하고, 아래 작성 폼에 직접 작성해 제출하세요.`, true, true);
     renderResources(data.resources, t.title);
-    if(!document.querySelector('.submission-textarea')) showEvalInput();
+    showPlanReportModal(t.title, latestPlanReport, latestPlanReportId);
+    if(!document.querySelector('.writing-form')) showEvalInput();
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${e.message || '자료 추천 중 오류가 발생했어요.'}`);
@@ -1272,43 +1326,136 @@ function renderResources(text, topic) {
   document.getElementById('resourceContent').innerHTML = html;
 }
 
+function showPlanReportModal(topic, reportText, reportId=null) {
+  const title = `${topic || '수행평가'} 설계 리포트`;
+  document.getElementById('reportModalTitle').textContent = '📘 수행평가 설계 리포트';
+  document.getElementById('reportModalBody').innerHTML = buildReportHtml({
+    title,
+    type: 'plan',
+    content: reportText || '리포트 내용이 없습니다.',
+    reportId
+  });
+  document.getElementById('reportModal').classList.add('show');
+}
+
+function showEvaluationReportModal(topic, reportText, reportId=null) {
+  const title = `${topic || '수행평가'} 평가 리포트`;
+  document.getElementById('reportModalTitle').textContent = '📊 수행평가 평가 리포트';
+  document.getElementById('reportModalBody').innerHTML = buildReportHtml({
+    title,
+    type: 'evaluation',
+    content: reportText || '평가 리포트 내용이 없습니다.',
+    reportId
+  });
+  document.getElementById('reportModal').classList.add('show');
+}
+
+function buildReportHtml({title, type, content, reportId}) {
+  const typeLabel = type === 'evaluation' ? '평가 리포트' : '설계 리포트';
+  return `
+    <div class="report-layout">
+      <div class="report-paper" id="activeReportPaper">
+        <div class="report-paper-title">${esc(title)}</div>
+        <div class="report-paper-meta">
+          <span class="meta-tag tag-grade">${esc(studentInfo?.grade || '')}</span>
+          <span class="meta-tag tag-subject">${esc(studentInfo?.subject || '')}</span>
+          <span class="meta-tag tag-career">${esc(studentInfo?.career || '')}</span>
+          <span class="meta-tag tag-subject">${typeLabel}</span>
+        </div>
+        <div class="report-text">${esc(stripMarkdown(content)).replace(/\n/g,'<br>')}</div>
+      </div>
+      <aside class="report-actions">
+        <div class="report-action-card">
+          <div style="font-size:13px;font-weight:800;margin-bottom:8px;">리포트 관리</div>
+          <div style="font-size:12px;color:var(--text-sub);line-height:1.6;margin-bottom:12px;">현재 리포트는 서버에 저장되어 있으며, 목록에서 다시 열 수 있습니다.</div>
+          <button class="report-action-btn" onclick="downloadCurrentReportPdf('${escJs(title)}')">PDF로 다운로드</button>
+          <button class="report-action-btn secondary" style="margin-top:8px;" onclick="openReportListModal()">저장 리포트 목록</button>
+        </div>
+      </aside>
+    </div>`;
+}
+
+function closeReportModal() {
+  document.getElementById('reportModal').classList.remove('show');
+}
+
+function downloadCurrentReportPdf(title='수행평가 리포트') {
+  const paper = document.getElementById('activeReportPaper');
+  if(!paper) return;
+  const win = window.open('', '_blank');
+  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${esc(title)}</title>
+    <style>
+      @page { size: A4; margin: 18mm; }
+      body { font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif; color:#1a1f3c; }
+      .report-paper-title { font-size:22px; font-weight:900; margin-bottom:12px; }
+      .report-paper-meta { margin-bottom:18px; display:flex; gap:8px; flex-wrap:wrap; }
+      .meta-tag { border:1px solid #d8def2; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; }
+      .report-text { font-size:12.5px; line-height:1.85; }
+    </style></head><body>${paper.innerHTML}</body></html>`;
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 350);
+}
+
 function showEvalInput() {
   const uid = Date.now();
-  addAiMsg(`완성본이 준비되면 평가받으세요! 📋<br>
-    <div class="eval-type-tabs">
-      <button class="eval-type-tab active" id="evalTabText_${uid}" onclick="switchEvalType('text','${uid}')">📝 텍스트로 평가</button>
-      <button class="eval-type-tab" id="evalTabImg_${uid}" onclick="switchEvalType('image','${uid}')">📷 이미지로 평가</button>
-    </div>
-    <div id="evalTextArea_${uid}">
-      <textarea class="submit-textarea submission-textarea" placeholder="완성된 수행평가 내용을 여기에 붙여넣으세요..."></textarea>
-      <div style="margin-top:10px;"><button class="btn-primary" onclick="evaluateSubmission('${uid}')">📊 평가받기</button></div>
-    </div>
-    <div id="evalImageArea_${uid}" style="display:none;">
-      <div class="eval-upload-area" onclick="document.getElementById('evalImageInput').click()">
-        <div style="font-size:28px;margin-bottom:6px;">📷</div>
-        <div style="font-size:14px;font-weight:500;">완성본 사진 업로드</div>
-        <div style="font-size:12px;color:var(--text-sub);margin-top:4px;">손으로 쓴 것도 OK · PNG, JPG</div>
+  const topicValue = selectedTopic || '';
+  addAiMsg(`이제 아래 폼에 수행평가를 직접 작성해 제출하세요. 작성한 내용은 평가 후 리포트로 저장됩니다. 📋<br>
+    <div class="writing-form" id="writingForm_${uid}">
+      <div class="writing-form-title">수행평가 작성 폼</div>
+      <div class="writing-field">
+        <label class="writing-label">주제</label>
+        <input class="writing-input writing-topic" value="${esc(topicValue)}" placeholder="수행평가 주제를 입력하세요">
+      </div>
+      <div class="writing-field">
+        <label class="writing-label">서론</label>
+        <textarea class="writing-textarea writing-intro" placeholder="탐구 동기, 문제 제기, 주제 선정 이유를 학생 본인의 언어로 작성하세요."></textarea>
+      </div>
+      <div class="writing-field">
+        <label class="writing-label">본론</label>
+        <textarea class="writing-textarea body writing-body" placeholder="교과 개념, 자료 근거, 분석 과정, 자신의 해석을 중심으로 작성하세요."></textarea>
+      </div>
+      <div class="writing-field">
+        <label class="writing-label">결론</label>
+        <textarea class="writing-textarea writing-conclusion" placeholder="탐구 결과, 느낀 점, 진로 또는 후속 탐구 방향을 작성하세요."></textarea>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:10px;">
+        <button class="btn-primary" onclick="evaluateSubmission('${uid}')">📊 제출하고 평가 리포트 받기</button>
       </div>
     </div>`, true);
 }
 
-function switchEvalType(type, uid) {
-  document.getElementById(`evalTabText_${uid}`).classList.toggle('active', type==='text');
-  document.getElementById(`evalTabImg_${uid}`).classList.toggle('active', type==='image');
-  document.getElementById(`evalTextArea_${uid}`).style.display = type==='text' ? 'block' : 'none';
-  document.getElementById(`evalImageArea_${uid}`).style.display = type==='image' ? 'block' : 'none';
-}
 
 async function evaluateSubmission(uid) {
-  const area = document.getElementById(`evalTextArea_${uid}`);
-  const text = area ? area.querySelector('textarea')?.value?.trim() : null;
-
-  if(!text) {
-    showToast('평가할 내용을 입력해주세요!');
+  const form = document.getElementById(`writingForm_${uid}`);
+  if(!form) {
+    showToast('작성 폼을 찾을 수 없습니다.');
     return;
   }
 
-  addUserMsg(text.slice(0,80)+(text.length>80?'...':''));
+  const topic = form.querySelector('.writing-topic')?.value?.trim() || selectedTopic || '';
+  const intro = form.querySelector('.writing-intro')?.value?.trim() || '';
+  const body = form.querySelector('.writing-body')?.value?.trim() || '';
+  const conclusion = form.querySelector('.writing-conclusion')?.value?.trim() || '';
+
+  if(!topic || !intro || !body || !conclusion) {
+    showToast('주제, 서론, 본론, 결론을 모두 입력해주세요!');
+    return;
+  }
+
+  const text = `주제: ${topic}
+
+서론
+${intro}
+
+본론
+${body}
+
+결론
+${conclusion}`;
+
+  addUserMsg(`${topic} 수행평가를 제출합니다.`);
   addLoading();
 
   try {
@@ -1332,9 +1479,11 @@ async function evaluateSubmission(uid) {
       updateCallUsage(data.call_count, data.call_limit || 0);
     }
 
+    latestEvaluationReportId = data.report_id || null;
     removeLoading();
-    addAiMsg('평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인해보세요 📊', true, true);
+    addAiMsg('평가 완료! <strong>평가 리포트</strong>가 저장됐어요. 오른쪽 평가 결과 탭과 저장 리포트 목록에서 다시 확인할 수 있습니다 📊', true, true);
     renderEvaluation(data.evaluation);
+    showEvaluationReportModal(selectedTopic || topic, data.evaluation, latestEvaluationReportId);
 
   } catch(e) {
     removeLoading();
@@ -1411,56 +1560,6 @@ async function sendMessage() {
     return;
   }
   addAiMsg('수행평가와 관련된 질문을 해주세요 😊');
-}
-
-async function evaluateImage(event) {
-  const file = event.target.files[0];
-  event.target.value = '';
-
-  if(!file) return;
-
-  if(!sessionId) {
-    showToast('세션이 없습니다. 다시 로그인해주세요.');
-    return;
-  }
-
-  addUserMsg(`📷 이미지로 평가 요청: ${file.name}`);
-  addLoading();
-  switchTab('eval');
-
-  try {
-    const uploaded = await uploadImageToStorage(file, 'evaluation');
-
-    const res = await apiFetch(`${API}/evaluate-image-storage`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        session_id: sessionId,
-        image_path: uploaded.path,
-        mime_type: uploaded.mime_type,
-        confirm_submit: true
-      })
-    });
-
-    const data = await res.json();
-
-    if(!res.ok) {
-      throw new Error(data.detail || '이미지 평가 중 오류가 발생했습니다.');
-    }
-
-    if(data.call_count !== undefined) {
-      updateCallUsage(data.call_count, data.call_limit || 0);
-    }
-
-    removeLoading();
-    addAiMsg('이미지 평가 완료! 오른쪽 <strong>평가 결과 탭</strong>을 확인하세요 📊', true);
-    renderEvaluation(data.evaluation);
-    showToast('✅ 이미지 평가 완료!');
-
-  } catch(e) {
-    removeLoading();
-    addAiMsg(`❌ ${e.message || '이미지 평가 중 오류가 발생했어요.'}`);
-  }
 }
 
 // ───────────────────────────────────────
@@ -1541,6 +1640,7 @@ function addLoading() {
 function removeLoading() { const e=document.getElementById('loadingMsg'); if(e) e.remove(); }
 function scrollBot() { const e=document.getElementById('chatMessages'); e.scrollTop=e.scrollHeight; }
 function esc(t) { return String(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function escJs(t) { return String(t).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,' '); }
 function showToast(msg) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),3000); }
 function handleKey(e) { if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendMessage(); } }
 function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
