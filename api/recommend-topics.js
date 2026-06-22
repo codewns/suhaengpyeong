@@ -15,13 +15,14 @@ export default async function handler(req, res) {
 
   try {
     const {
-      session_id,
-      grade = '고등학생',
-      subject = '국어',
-      desired_career = '',
-      assessment_info = null,
-      previous_topic = ''
-    } = req.body || {};
+  session_id,
+  grade,
+  subject,
+  school_type,
+  desired_career,
+  previous_topic,
+  assessment_info
+} = req.body || {};
 
     const session = await getSession(session_id);
 
@@ -75,6 +76,16 @@ ${CROSS_SUBJECT_CONNECTION_GUIDE}
 4. 사용한 경우 "다른 과목 연계 포인트" 항목에서 어떤 과목의 어떤 흐름을 현재 과목 방식으로 바꾸었는지 설명한다.
 5. 사용하지 않는 경우 굳이 언급하지 않는다.
 
+2022 개정 교육과정 및 학교 유형 반영 규칙:
+1. 학교 유형은 과목명이 아니므로 주제 추천의 직접 기준으로 삼지 않는다. 주제 추천의 핵심 기준은 실제 선택 과목명과 수행평가 안내문이다.
+2. 학교 유형이 자율형 사립고 또는 특수목적고인 경우, 전문교과 과목이 선택될 수 있으므로 과목 수준을 더 구체적으로 확인한다.
+3. 과목명이 "과학 / 고급 생명과학"처럼 입력되면 앞의 "과학"은 교과군, 뒤의 "고급 생명과학"은 실제 과목명으로 본다.
+4. 공통국어, 공통수학, 공통영어, 한국사, 통합사회, 통합과학, 과학탐구실험은 기초 개념과 탐구 경험 중심으로 추천한다.
+5. 일반 선택 과목은 교과 개념 적용, 자료 분석, 개념 확장 중심으로 추천한다.
+6. 진로 선택 또는 융합 선택 과목은 진로 연계 심화 탐구와 융합적 문제 해결 중심으로 추천한다.
+7. 전문교과 과목은 고급 개념을 그대로 나열하지 말고, 학생이 수행평가에서 실제로 수행 가능한 수준으로 조정한다.
+8. 학교별 교육과정 편성 차이가 있으므로 학년만 보고 과목 수준을 단정하지 말고, 선택 과목명과 수행평가 안내문을 함께 기준으로 삼는다.
+
 출력 규칙:
 1. *, **, ##, ### 같은 마크다운 기호를 절대 사용하지 않는다.
 2. 영어 단어나 영어 표현을 괄호 안에 넣지 않는다.
@@ -115,8 +126,9 @@ ${CROSS_SUBJECT_CONNECTION_GUIDE}
 
     const userMsg = `
 [학생 정보]
-- 학년: ${grade}
-- 과목: ${subject}
+- 학년/학기: ${grade}
+- 학교 유형: ${school_type || '일반고'}
+- 선택 과목: ${subject}
 - 희망 진로: ${desired_career}
 - 같은 과목에서 이전에 한 주제: ${previousTopic}
 
@@ -137,6 +149,7 @@ ${assessmentText}
     const updated = await updateSession(session_id, {
       grade,
       subject,
+      school_type: school_type || '일반고',
       career: desired_career,
       previous_topic: previousTopic === '없음' ? '' : previousTopic,
       assessment_info: assessmentText,
