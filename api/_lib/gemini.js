@@ -7,23 +7,25 @@ if (!GEMINI_API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
-export async function callText(system, userMsg) {
+export async function callText(system, userMsg, options = {}) {
   const response = await ai.models.generateContent({
-    model: MODEL,
+    model: options.model || MODEL,
     contents: userMsg,
     config: {
-      systemInstruction: system
+      systemInstruction: system,
+      temperature: options.temperature ?? 0.35,
+      maxOutputTokens: options.maxOutputTokens ?? 2200
     }
   });
 
   return response.text || '';
 }
 
-export async function callVision(system, imageBytes, mimeType, prompt) {
+export async function callVision(system, imageBytes, mimeType, prompt, options = {}) {
   const base64 = Buffer.from(imageBytes).toString('base64');
 
   const response = await ai.models.generateContent({
-    model: MODEL,
+    model: options.model || MODEL,
     contents: [
       {
         inlineData: {
@@ -36,7 +38,9 @@ export async function callVision(system, imageBytes, mimeType, prompt) {
       }
     ],
     config: {
-      systemInstruction: system
+      systemInstruction: system,
+      temperature: options.temperature ?? 0.25,
+      maxOutputTokens: options.maxOutputTokens ?? 2600
     }
   });
 
