@@ -39,6 +39,7 @@ export default async function handler(req, res) {
     }
 
     const session = await getSession(session_id);
+    const schoolType = session.school_type || '일반고';
 
     if (!session?.student_code) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
@@ -68,6 +69,9 @@ ${CORE_PRINCIPLES}
 4. 표절 위험이 있으면 반드시 지적한다.
 5. 평가 기준과 연결해서 판단한다.
 6. 실제 제출물이 아닌 주제명, 자료 추천 결과, 빈 문장, 단순 메모처럼 보이는 경우 평가하지 말고 제출물 부족으로 안내한다.
+7. 학교 유형은 평가 기준이 아니라 참고 정보로만 활용한다.
+8. 과목명이 구체적으로 입력되어 있으면 해당 과목의 수준과 성격을 기준으로 판단한다. 단, 수행평가 안내문의 평가 기준이 더 구체적이면 안내문을 우선한다.
+9. 전문교과 과목이라도 학생이 실제 수행평가에서 다룰 수 있는 범위를 기준으로 평가한다.
 
 평가 형식:
 
@@ -120,8 +124,14 @@ ${session.selected_topic || '미입력'}
 [희망 진로]
 ${session.career || '미입력'}
 
-[학년]
+[학년/학기]
 ${session.grade || '미입력'}
+
+[학교 유형]
+${schoolType}
+
+[선택 과목]
+${session.subject || '미입력'}
 
 [이전에 했던 주제]
 ${session.previous_topic || '없음'}
