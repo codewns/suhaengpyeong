@@ -38,13 +38,14 @@ export default async function handler(req, res) {
 
   try {
     const {
-      session_id,
-      image_path,
-      mime_type = 'image/jpeg',
-      subject = '',
-      career = '',
-      grade = '고등학생'
-    } = req.body || {};
+  session_id,
+  image_path,
+  mime_type,
+  subject,
+  career,
+  grade,
+  school_type
+} = req.body || {};
 
     if (!session_id || !image_path) {
       return res.status(400).json({ detail: 'session_id와 image_path가 필요합니다.' });
@@ -95,6 +96,7 @@ ${CORE_PRINCIPLES}
 질문 3: (질문 내용 그대로)
 ...
 질문 목록이 없으면 "질문 목록 없음"으로 표시하세요.
+
 
 [자료/도서/영상 목록 - 절대 누락 금지]
 안내문에 학생이 선택해야 할 자료/도서/영상 목록이 있으면 전부 추출하세요.
