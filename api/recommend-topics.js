@@ -1,5 +1,6 @@
-import { CORE_PRINCIPLES } from './_lib/config.js';
-import { loadKnowledgeByGradeSubject } from './_lib/knowledge.js';
+import { CORE_PRINCIPLES, CROSS_SUBJECT_CONNECTION_GUIDE } from './_lib/config.js';
+import { loadStageKnowledgeByGradeSubject } from './_lib/knowledge.js';
+import { loadDynamicAssessmentKnowledge } from './_lib/dynamic-knowledge.js';
 import {
   getSession,
   updateSession,
@@ -39,16 +40,43 @@ export default async function handler(req, res) {
 
     const assessmentText = assessment_info || session.assessment_info || '수행평가 안내문 정보 없음';
     const previousTopic = previous_topic || session.previous_topic || '없음';
-    const knowledgeBase = loadKnowledgeByGradeSubject(grade, subject);
+
+    const topicKnowledge = loadStageKnowledgeByGradeSubject(grade, subject, 'topic');
+
+    const dynamicTopicKnowledge = await loadDynamicAssessmentKnowledge({
+      grade,
+      subject,
+      career: desired_career,
+      selectedTopic: previousTopic,
+      assessmentInfo: assessmentText,
+      purpose: 'topic',
+      maxItems: 6,
+      maxChars: 4500,
+      includeOtherSubjects: true
+    });
 
     const system = `
 ${CORE_PRINCIPLES}
 
 당신은 고등학교 수행평가 주제 추천 전문가입니다.
-아래의 학년·과목별 내부 지식 데이터를 최우선으로 참고해 학생 맞춤 주제를 추천하세요.
+이 단계에서는 주제 추천용 데이터만 사용합니다.
+자료 추천용 데이터나 평가용 데이터는 사용하지 않습니다.
 
-[학년·과목별 내부 지식 데이터]
-${knowledgeBase}
+[주제 추천용 내부 지식 데이터]
+${topicKnowledge}
+
+[홈페이지 위닝 수행 주제 DB]
+${dynamicTopicKnowledge}
+
+[다른 과목 연계 판단 기준]
+${CROSS_SUBJECT_CONNECTION_GUIDE}
+
+다른 과목 선배 데이터 활용 규칙:
+1. 다른 과목 후보는 반드시 먼저 연계 가능성을 판단한다.
+2. 현재 과목의 수행평가 방식으로 재해석할 수 있을 때만 사용한다.
+3. 억지 연계이면 사용하지 않는다.
+4. 사용한 경우 "다른 과목 연계 포인트" 항목에서 어떤 과목의 어떤 흐름을 현재 과목 방식으로 바꾸었는지 설명한다.
+5. 사용하지 않는 경우 굳이 언급하지 않는다.
 
 출력 규칙:
 1. *, **, ##, ### 같은 마크다운 기호를 절대 사용하지 않는다.
@@ -56,29 +84,36 @@ ${knowledgeBase}
 3. 주제명은 반드시 수행평가에서 실제로 탐구할 수 있는 구체적인 한국어 주제명으로 작성한다.
 4. 안내문에 없는 질문을 만들어내지 않는다.
 5. 추천 3개가 끝나면 추가 안내를 쓰지 않는다.
+6. 학생이 그대로 제출할 수 있는 완성문을 작성하지 않는다.
 
 반드시 아래 형식으로 3개 추천:
 
-추천 1: (구체적인 한국어 주제명)
+추천 1: 구체적인 한국어 주제명
+0. 선정 근거:
 1. 핵심 내용:
 2. 이전 주제와의 연결:
-3. 추후 심화 방향:
-4. 추천 이유:
-5. 점수 강점:
+3. 다른 과목 연계 포인트:
+4. 추후 심화 방향:
+5. 추천 이유:
+6. 점수 강점:
 
-추천 2: (구체적인 한국어 주제명)
+추천 2: 구체적인 한국어 주제명
+0. 선정 근거:
 1. 핵심 내용:
 2. 이전 주제와의 연결:
-3. 추후 심화 방향:
-4. 추천 이유:
-5. 점수 강점:
+3. 다른 과목 연계 포인트:
+4. 추후 심화 방향:
+5. 추천 이유:
+6. 점수 강점:
 
-추천 3: (구체적인 한국어 주제명)
+추천 3: 구체적인 한국어 주제명
+0. 선정 근거:
 1. 핵심 내용:
 2. 이전 주제와의 연결:
-3. 추후 심화 방향:
-4. 추천 이유:
-5. 점수 강점:
+3. 다른 과목 연계 포인트:
+4. 추후 심화 방향:
+5. 추천 이유:
+6. 점수 강점:
 `.trim();
 
     const userMsg = `
@@ -91,8 +126,13 @@ ${knowledgeBase}
 [수행평가 안내문]
 ${assessmentText}
 
-위 정보를 바탕으로 맞춤 주제 3개를 추천해주세요.
-특히 이전 주제가 있다면 그것을 심화·확장하는 방향을 최우선으로 고려하세요.
+작업:
+1. 수행평가 안내문 조건을 최우선으로 반영한다.
+2. 같은 과목 이전 주제가 있으면 추천 1은 반드시 심화·확장 주제로 제시한다.
+3. 홈페이지 위닝 수행 주제 DB의 현재 과목 데이터는 적극 참고한다.
+4. 다른 과목 선배 데이터는 연계 가능할 때만 선택적으로 활용한다.
+5. 다른 과목 데이터를 활용하더라도 현재 과목의 과목성이 약해지면 안 된다.
+6. 안내문에 없는 질문이나 자료를 임의로 만들지 않는다.
 `.trim();
 
     const result = await callText(system, userMsg);
