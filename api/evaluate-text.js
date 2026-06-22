@@ -6,6 +6,7 @@ import {
   incrementCallCount
 } from './_lib/sessions.js';
 import { callText } from './_lib/gemini.js';
+import { saveAssessmentReport } from './_lib/reports.js';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
@@ -136,18 +137,36 @@ ${submission_text}
     const result = await callText(system, userMsg);
 
     const updated = await updateSession(session_id, {
-      evaluation: result
-    });
+  evaluation: result
+});
 
-    await dbSaveConversation(updated);
+await dbSaveConversation(updated);
 
-    return res.status(200).json({
-      status: 'success',
-      evaluation: result,
-      report_id: null,
-      call_count: usage.count,
-      call_limit: usage.limit
-    });
+const savedReport = await saveAssessmentReport({
+  student_code: session.student_code,
+  student_name: session.student_name || '',
+  report_type: 'evaluation',
+  title: session.selected_topic || '수행평가 평가 리포트',
+  grade: session.grade || '',
+  subject: session.subject || '',
+  career: session.career || '',
+  selected_topic: session.selected_topic || '',
+  report_content: result,
+  submission_text,
+  evaluation_result: result,
+  meta: {
+    previous_topic: session.previous_topic || '',
+    assessment_info: session.assessment_info || ''
+  }
+});
+
+return res.status(200).json({
+  status: 'success',
+  evaluation: result,
+  report_id: savedReport?.id || null,
+  call_count: usage.count,
+  call_limit: usage.limit
+});
   } catch (error) {
     console.error('evaluate text error:', error);
     return res.status(500).json({ detail: '평가 중 오류가 발생했습니다.' });
