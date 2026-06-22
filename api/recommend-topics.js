@@ -1,5 +1,4 @@
 import { CORE_PRINCIPLES, CROSS_SUBJECT_CONNECTION_GUIDE } from './_lib/config.js';
-import { loadStageKnowledgeByGradeSubject } from './_lib/knowledge.js';
 import { loadDynamicAssessmentKnowledge } from './_lib/dynamic-knowledge.js';
 import {
   getSession,
@@ -41,7 +40,7 @@ export default async function handler(req, res) {
     const assessmentText = assessment_info || session.assessment_info || '수행평가 안내문 정보 없음';
     const previousTopic = previous_topic || session.previous_topic || '없음';
 
-    const topicKnowledge = loadStageKnowledgeByGradeSubject(grade, subject, 'topic');
+  
 
     const dynamicTopicKnowledge = await loadDynamicAssessmentKnowledge({
       grade,
@@ -62,8 +61,6 @@ ${CORE_PRINCIPLES}
 이 단계에서는 주제 추천용 데이터만 사용합니다.
 자료 추천용 데이터나 평가용 데이터는 사용하지 않습니다.
 
-[주제 추천용 내부 지식 데이터]
-${topicKnowledge}
 
 [홈페이지 위닝 수행 주제 DB]
 ${dynamicTopicKnowledge}
