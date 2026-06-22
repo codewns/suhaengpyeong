@@ -40,6 +40,7 @@ export default async function handler(req, res) {
 
     const grade = session.grade || '고등학생';
     const subject = session.subject || '국어';
+    const schoolType = session.school_type || '일반고';
     const career = session.career || '';
 
 
@@ -64,6 +65,9 @@ export default async function handler(req, res) {
 ${dynamicResourceKnowledge}
 
 반드시 지켜야 할 규칙:
+0. 자료 추천은 학교 유형이 아니라 실제 선택 과목명을 기준으로 한다.
+0-1. 학교 유형이 자율형 사립고 또는 특수목적고이고 선택 과목이 전문교과라면, 자료 수준은 높이되 학생 수행평가에서 실제로 활용 가능한 자료를 우선 추천한다.
+0-2. 과목명이 "과학 / 생물의 유전"처럼 입력되면 앞의 "과학"은 교과군, 뒤의 "생물의 유전"은 실제 과목명으로 본다.
 1. 위닝 수행 자료 DB에 있는 검증 자료를 우선 사용한다.
 2. 선택 주제와 직접 연결되는 자료만 추천한다.
 3. 내부 지식 데이터나 위닝DB에 없는 자료명, 저자, 링크를 지어내지 않는다.
@@ -117,8 +121,9 @@ ${selected_topic}
 ${selected_topic_detail || '없음'}
 
 [학생 정보]
-- 학년: ${grade}
-- 과목: ${subject}
+- 학년/학기: ${grade}
+- 학교 유형: ${schoolType}
+- 선택 과목: ${subject}
 - 희망 진로: ${career || '미입력'}
 - 이전 주제: ${session.previous_topic || '없음'}
 
