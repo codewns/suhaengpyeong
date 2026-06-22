@@ -1562,6 +1562,105 @@ async function sendMessage() {
   addAiMsg('수행평가와 관련된 질문을 해주세요 😊');
 }
 
+async function openReportListModal() {
+  if(!sessionId) {
+    showToast('로그인이 필요합니다.');
+    return;
+  }
+
+  const body = document.getElementById('reportListModalBody');
+  body.innerHTML = '<div class="scrap-empty">저장 리포트를 불러오는 중...</div>';
+  document.getElementById('reportListModal').classList.add('show');
+
+  try {
+    const res = await apiFetch(`${API}/report-list`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: sessionId })
+    });
+
+    const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '목록 조회 실패');
+    }
+
+    const reports = data.reports || [];
+
+    if(!reports.length) {
+      body.innerHTML = '<div class="scrap-empty">아직 저장된 리포트가 없습니다.</div>';
+      return;
+    }
+
+    body.innerHTML = reports.map(r => {
+      const type = r.report_type === 'evaluation' ? '평가 리포트' : '설계 리포트';
+      const date = r.created_at ? new Date(r.created_at).toLocaleString('ko-KR') : '';
+
+      return `<div class="report-list-item" onclick="openSavedReport('${r.id}')">
+        <div class="report-list-title">${esc(r.title || r.selected_topic || '수행평가 리포트')}</div>
+        <div class="report-list-meta">
+          <span>${esc(type)}</span>
+          <span>${esc(r.grade || '')}</span>
+          <span>${esc(r.subject || '')}</span>
+          <span>${esc(r.career || '')}</span>
+          <span>${esc(date)}</span>
+        </div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    body.innerHTML = `<div class="scrap-empty">${esc(e.message || '리포트 목록을 불러오지 못했습니다.')}</div>`;
+  }
+}
+
+function closeReportListModal() {
+  document.getElementById('reportListModal').classList.remove('show');
+
+  document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+
+  const firstSidebarItem = document.querySelector('.sidebar-item');
+  if(firstSidebarItem) {
+    firstSidebarItem.classList.add('active');
+  }
+}
+
+async function openSavedReport(reportId) {
+  if(!sessionId || !reportId) return;
+
+  try {
+    const res = await apiFetch(`${API}/report-get`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ session_id: sessionId, report_id: reportId })
+    });
+
+    const data = await res.json();
+
+    if(!res.ok) {
+      throw new Error(data.detail || '리포트 조회 실패');
+    }
+
+    const r = data.report;
+
+    closeReportListModal();
+
+    document.getElementById('reportModalTitle').textContent =
+      r.report_type === 'evaluation'
+        ? '📊 수행평가 평가 리포트'
+        : '📘 수행평가 설계 리포트';
+
+    document.getElementById('reportModalBody').innerHTML = buildReportHtml({
+      title: r.title || r.selected_topic || '수행평가 리포트',
+      type: r.report_type,
+      content: r.report_content || r.evaluation_result || '',
+      reportId: r.id
+    });
+
+    document.getElementById('reportModal').classList.add('show');
+  } catch(e) {
+    showToast(e.message || '리포트를 열지 못했습니다.');
+  }
+}  
+  
 // ───────────────────────────────────────
 // 유틸
 // ───────────────────────────────────────
