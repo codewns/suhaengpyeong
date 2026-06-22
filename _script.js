@@ -6,6 +6,184 @@ const SUPABASE_URL = 'https://orwngbyiylchpzufwvej.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yd25nYnlpeWxjaHB6dWZ3dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzkyMzIsImV4cCI6MjA4ODQ1NTIzMn0.LnKlvHTo9Q_teQd-MTNpdVnGcTT27szXcO-GzGxwfmg';
 const STORAGE_BUCKET = 'assessment-images';
 
+const CURRICULUM_2022 = {
+  '고1': {
+    '1학기': {
+      '국어': ['공통국어 1'],
+      '수학': ['공통수학 1', '기본수학 1'],
+      '영어': ['공통영어 1', '기본영어 1'],
+      '한국사': ['한국사 1'],
+      '사회': ['통합사회 1'],
+      '과학': ['통합과학 1', '과학탐구실험 1']
+    },
+    '2학기': {
+      '국어': ['공통국어 2'],
+      '수학': ['공통수학 2', '기본수학 2'],
+      '영어': ['공통영어 2', '기본영어 2'],
+      '한국사': ['한국사 2'],
+      '사회': ['통합사회 2'],
+      '과학': ['통합과학 2', '과학탐구실험 2']
+    }
+  },
+
+  '고2': {
+    '1학기': {
+      '국어': ['화법과 언어', '독서와 작문', '문학'],
+      '수학': ['대수', '미적분Ⅰ', '확률과 통계'],
+      '영어': ['영어Ⅰ', '영어Ⅱ', '영어 독해와 작문'],
+      '사회': ['세계시민과 지리', '세계사', '사회와 문화', '현대사회와 윤리'],
+      '과학': ['물리학', '화학', '생명과학', '지구과학'],
+      '체육': ['체육1', '체육2'],
+      '예술': ['음악', '미술', '연극'],
+      '기술·가정': ['기술·가정'],
+      '정보': ['정보'],
+      '제2외국어': ['독일어', '프랑스어', '스페인어', '중국어', '일본어', '러시아어', '아랍어', '베트남어'],
+      '한문': ['한문'],
+      '교양': ['진로와 직업', '생태와 환경']
+    },
+    '2학기': {
+      '국어': ['화법과 언어', '독서와 작문', '문학'],
+      '수학': ['대수', '미적분Ⅰ', '확률과 통계'],
+      '영어': ['영어Ⅰ', '영어Ⅱ', '영어 독해와 작문'],
+      '사회': ['세계시민과 지리', '세계사', '사회와 문화', '현대사회와 윤리'],
+      '과학': ['물리학', '화학', '생명과학', '지구과학'],
+      '체육': ['체육1', '체육2'],
+      '예술': ['음악', '미술', '연극'],
+      '기술·가정': ['기술·가정'],
+      '정보': ['정보'],
+      '제2외국어': ['독일어', '프랑스어', '스페인어', '중국어', '일본어', '러시아어', '아랍어', '베트남어'],
+      '한문': ['한문'],
+      '교양': ['진로와 직업', '생태와 환경']
+    }
+  },
+
+  '고3': {
+    '1학기': {
+      '국어': ['주제 탐구 독서', '문학과 영상', '직무 의사소통', '독서 토론과 글쓰기', '매체 의사소통', '언어생활 탐구'],
+      '수학': ['기하', '미적분Ⅱ', '경제 수학', '인공지능 수학', '직무 수학', '수학과 문화', '실용 통계', '수학과제 탐구'],
+      '영어': ['영미 문학 읽기', '영어 발표와 토론', '심화 영어', '심화 영어 독해와 작문', '직무 영어', '실생활 영어 회화', '미디어 영어', '세계 문화와 영어'],
+      '사회': ['한국지리 탐구', '도시의 미래 탐구', '동아시아 역사 기행', '정치', '법과 사회', '경제', '윤리와 사상', '인문학과 윤리', '국제 관계의 이해', '여행지리', '역사로 탐구하는 현대 세계', '사회문제 탐구', '금융과 경제생활', '윤리문제 탐구', '기후변화와 지속가능한 세계'],
+      '과학': ['역학과 에너지', '전자기와 양자', '물질과 에너지', '화학 반응의 세계', '세포와 물질대사', '생물의 유전', '지구시스템과학', '행성우주과학', '과학의 역사와 문화', '기후변화와 환경생태', '융합과학 탐구'],
+      '체육': ['운동과 건강', '스포츠 문화', '스포츠 과학', '스포츠 생활1', '스포츠 생활2'],
+      '예술': ['음악 연주와 창작', '음악 감상과 비평', '미술 창작', '미술 감상과 비평', '음악과 미디어', '미술과 매체'],
+      '기술·가정': ['로봇과 공학세계', '생활과학 탐구', '창의 공학 설계', '지식 재산 일반', '생애 설계와 자립', '아동발달과 부모'],
+      '정보': ['인공지능 기초', '데이터 과학', '소프트웨어와 생활'],
+      '제2외국어': ['독일어 회화', '프랑스어 회화', '스페인어 회화', '중국어 회화', '일본어 회화', '러시아어 회화', '아랍어 회화', '베트남어 회화', '심화 독일어', '심화 프랑스어', '심화 스페인어', '심화 중국어', '심화 일본어', '심화 러시아어', '심화 아랍어', '심화 베트남어', '독일어권 문화', '프랑스어권 문화', '스페인어권 문화', '중국 문화', '일본 문화', '러시아 문화', '아랍 문화', '베트남 문화'],
+      '한문': ['한문 고전 읽기', '언어생활과 한자'],
+      '교양': ['인간과 철학', '논리와 사고', '인간과 심리', '교육의 이해', '삶과 종교', '보건', '인간과 경제활동', '논술']
+    },
+    '2학기': {
+      '국어': ['주제 탐구 독서', '문학과 영상', '직무 의사소통', '독서 토론과 글쓰기', '매체 의사소통', '언어생활 탐구'],
+      '수학': ['기하', '미적분Ⅱ', '경제 수학', '인공지능 수학', '직무 수학', '수학과 문화', '실용 통계', '수학과제 탐구'],
+      '영어': ['영미 문학 읽기', '영어 발표와 토론', '심화 영어', '심화 영어 독해와 작문', '직무 영어', '실생활 영어 회화', '미디어 영어', '세계 문화와 영어'],
+      '사회': ['한국지리 탐구', '도시의 미래 탐구', '동아시아 역사 기행', '정치', '법과 사회', '경제', '윤리와 사상', '인문학과 윤리', '국제 관계의 이해', '여행지리', '역사로 탐구하는 현대 세계', '사회문제 탐구', '금융과 경제생활', '윤리문제 탐구', '기후변화와 지속가능한 세계'],
+      '과학': ['역학과 에너지', '전자기와 양자', '물질과 에너지', '화학 반응의 세계', '세포와 물질대사', '생물의 유전', '지구시스템과학', '행성우주과학', '과학의 역사와 문화', '기후변화와 환경생태', '융합과학 탐구'],
+      '체육': ['운동과 건강', '스포츠 문화', '스포츠 과학', '스포츠 생활1', '스포츠 생활2'],
+      '예술': ['음악 연주와 창작', '음악 감상과 비평', '미술 창작', '미술 감상과 비평', '음악과 미디어', '미술과 매체'],
+      '기술·가정': ['로봇과 공학세계', '생활과학 탐구', '창의 공학 설계', '지식 재산 일반', '생애 설계와 자립', '아동발달과 부모'],
+      '정보': ['인공지능 기초', '데이터 과학', '소프트웨어와 생활'],
+      '제2외국어': ['독일어 회화', '프랑스어 회화', '스페인어 회화', '중국어 회화', '일본어 회화', '러시아어 회화', '아랍어 회화', '베트남어 회화', '심화 독일어', '심화 프랑스어', '심화 스페인어', '심화 중국어', '심화 일본어', '심화 러시아어', '심화 아랍어', '심화 베트남어', '독일어권 문화', '프랑스어권 문화', '스페인어권 문화', '중국 문화', '일본 문화', '러시아 문화', '아랍 문화', '베트남 문화'],
+      '한문': ['한문 고전 읽기', '언어생활과 한자'],
+      '교양': ['인간과 철학', '논리와 사고', '인간과 심리', '교육의 이해', '삶과 종교', '보건', '인간과 경제활동', '논술']
+    }
+  }
+};
+
+const SPECIALIZED_COURSES_2022 = {
+  '수학': ['전문 수학', '이산 수학', '고급 기하', '고급 대수', '고급 미적분'],
+  '과학': ['고급 물리학', '고급 화학', '고급 생명과학', '고급 지구과학', '과학과제 연구', '물리학 실험', '화학 실험', '생명과학 실험', '지구과학 실험'],
+  '정보': ['정보과학'],
+  '체육': ['스포츠 개론', '육상', '체조', '수상 스포츠', '기초 체육 전공 실기', '심화 체육 전공 실기', '고급 체육 전공 실기', '스포츠 경기 체력', '스포츠 경기 기술', '스포츠 경기 분석', '스포츠 교육', '스포츠 생리의학', '스포츠 행정 및 경영'],
+  '예술': ['음악 이론', '음악사', '시창·청음', '음악 전공 실기', '합창·합주', '음악 공연 실습', '미술 이론', '드로잉', '미술사', '미술 전공 실기', '조형 탐구', '무용의 이해', '무용과 몸', '무용 기초 실기', '무용 전공 실기', '안무', '무용 제작 실습', '무용 감상과 비평', '문예 창작의 이해', '문장론', '문학 감상과 비평', '시 창작', '소설 창작', '극 창작', '연극과 몸', '연극과 말', '연기', '무대 미술과 기술', '연극 제작 실습', '연극 감상과 비평', '영화의 이해', '촬영·조명', '편집·사운드', '영화 제작 실습', '영화 감상과 비평', '사진의 이해', '사진 촬영', '사진 표현 기법', '영상 제작의 이해', '사진 감상과 비평', '음악과 문화', '미술 매체 탐구', '미술과 사회', '무용과 매체', '문학과 매체', '연극과 삶', '영화와 삶', '사진과 삶'],
+  '제2외국어': ['전공 기초 독일어', '독일어 회화Ⅰ', '독일어 회화Ⅱ', '독일어 독해와 작문Ⅰ', '독일어 독해와 작문Ⅱ', '전공 기초 프랑스어', '프랑스어 회화Ⅰ', '프랑스어 회화Ⅱ', '프랑스어 독해와 작문Ⅰ', '프랑스어 독해와 작문Ⅱ', '전공 기초 스페인어', '스페인어 회화Ⅰ', '스페인어 회화Ⅱ', '스페인어 독해와 작문Ⅰ', '스페인어 독해와 작문Ⅱ', '전공 기초 중국어', '중국어 회화Ⅰ', '중국어 회화Ⅱ', '중국어 독해와 작문Ⅰ', '중국어 독해와 작문Ⅱ', '전공 기초 일본어', '일본어 회화Ⅰ', '일본어 회화Ⅱ', '일본어 독해와 작문Ⅰ', '일본어 독해와 작문Ⅱ', '전공 기초 러시아어', '러시아어 회화Ⅰ', '러시아어 회화Ⅱ', '러시아어 독해와 작문Ⅰ', '러시아어 독해와 작문Ⅱ', '전공 기초 아랍어', '아랍어 회화Ⅰ', '아랍어 회화Ⅱ', '아랍어 독해와 작문Ⅰ', '아랍어 독해와 작문Ⅱ', '전공 기초 베트남어', '베트남어 회화Ⅰ', '베트남어 회화Ⅱ', '베트남어 독해와 작문Ⅰ', '베트남어 독해와 작문Ⅱ']
+};
+
+function shouldIncludeSpecializedCourses(schoolType) {
+  return schoolType === '특수목적고' || schoolType === '자율형 사립고';
+}
+
+function getCurriculumGroups(grade, semester) {
+  return Object.keys(CURRICULUM_2022?.[grade]?.[semester] || {});
+}
+
+function getCurriculumSubjects(grade, semester, group, schoolType = '일반고') {
+  const base = CURRICULUM_2022?.[grade]?.[semester]?.[group] || [];
+  const specialized = shouldIncludeSpecializedCourses(schoolType)
+    ? (SPECIALIZED_COURSES_2022[group] || [])
+    : [];
+
+  return [...base, ...specialized];
+}
+
+function subjectLabel(group, subject) {
+  if (!group && !subject) return '';
+  return group ? `${group} / ${subject}` : subject;
+}
+
+function updateCurriculumSelects(prefix) {
+  const gradeEl = document.getElementById(`${prefix}GradeInput`);
+  const semesterEl = document.getElementById(`${prefix}SemesterInput`);
+  const schoolTypeEl = document.getElementById(`${prefix}SchoolTypeInput`);
+  const groupEl = document.getElementById(`${prefix}SubjectGroupInput`);
+  const subjectEl = document.getElementById(`${prefix}SubjectInput`);
+
+  if (!gradeEl || !semesterEl || !schoolTypeEl || !groupEl || !subjectEl) return;
+
+  const grade = gradeEl.value;
+  const semester = semesterEl.value;
+  const schoolType = schoolTypeEl.value || '일반고';
+
+  const groups = getCurriculumGroups(grade, semester);
+  const currentGroup = groupEl.value;
+
+  groupEl.innerHTML = groups.map(g => `<option value="${esc(g)}">${esc(g)}</option>`).join('');
+
+  if (groups.includes(currentGroup)) {
+    groupEl.value = currentGroup;
+  }
+
+  const group = groupEl.value;
+  const subjects = getCurriculumSubjects(grade, semester, group, schoolType);
+  const currentSubject = subjectEl.value;
+
+  subjectEl.innerHTML = [
+    ...subjects.map(s => `<option value="${esc(s)}">${esc(s)}</option>`),
+    '<option value="직접 입력">직접 입력</option>'
+  ].join('');
+
+  if (subjects.includes(currentSubject)) {
+    subjectEl.value = currentSubject;
+  }
+
+  const customWrap = document.getElementById(`${prefix}CustomSubjectWrap`);
+  if (customWrap) {
+    customWrap.style.display = subjectEl.value === '직접 입력' ? 'block' : 'none';
+  }
+}
+
+function getSelectedCurriculum(prefix) {
+  const grade = document.getElementById(`${prefix}GradeInput`)?.value || '고등학생';
+  const semester = document.getElementById(`${prefix}SemesterInput`)?.value || '';
+  const schoolType = document.getElementById(`${prefix}SchoolTypeInput`)?.value || '일반고';
+  const group = document.getElementById(`${prefix}SubjectGroupInput`)?.value || '';
+  const subjectChoice = document.getElementById(`${prefix}SubjectInput`)?.value || '';
+  const customSubject = document.getElementById(`${prefix}CustomSubjectInput`)?.value?.trim() || '';
+
+  const realSubject = subjectChoice === '직접 입력' ? customSubject : subjectChoice;
+  const subject = subjectLabel(group, realSubject);
+
+  return {
+    grade,
+    semester,
+    gradeWithSemester: semester ? `${grade} ${semester}` : grade,
+    school_type: schoolType,
+    subject_group: group,
+    subject_name: realSubject,
+    subject,
+    include_specialized: shouldIncludeSpecializedCourses(schoolType)
+  };
+}
+
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let sessionId = null;
@@ -176,7 +354,7 @@ function showPreUploadForm() {
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">학년 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="preGradeInput">
+            <select class="form-select" id="preGradeInput" onchange="updateCurriculumSelects('pre')">
               <option>고1</option>
               <option>고2</option>
               <option>고3</option>
@@ -184,16 +362,46 @@ function showPreUploadForm() {
           </div>
 
           <div class="form-group">
-            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="preSubjectInput">
-              <option>국어</option>
-              <option>영어</option>
-              <option>수학</option>
-              <option>사회/역사</option>
-              <option>과학</option>
-              <option>기타</option>
+            <label class="form-label">학기 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSemesterInput" onchange="updateCurriculumSelects('pre')">
+              <option>1학기</option>
+              <option>2학기</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">학교 유형 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSchoolTypeInput" onchange="updateCurriculumSelects('pre')">
+              <option>일반고</option>
+              <option>자율형 사립고</option>
+              <option>특수목적고</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">교과군 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSubjectGroupInput" onchange="updateCurriculumSelects('pre')"></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="preSubjectInput" onchange="updateCurriculumSelects('pre')"></select>
+          </div>
+
+          <div class="form-group" id="preCustomSubjectWrap" style="display:none;">
+            <label class="form-label">직접 입력 과목명</label>
+            <input class="form-input" id="preCustomSubjectInput" placeholder="예: 과학과제 연구, 고급 생명과학, 학교 자체 편성 과목" />
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-sub);line-height:1.6;">
+          ※ 학교 유형은 과목명이 아니라 과목 목록을 조정하기 위한 선택값입니다.<br>
+          ※ 자율형 사립고·특수목적고를 선택하면 전문교과 과목이 각 교과군에 함께 표시됩니다.<br>
+          ※ 학교별 교육과정 편성에 따라 실제 이수 학기는 다를 수 있습니다.
         </div>
 
         <div class="form-group">
@@ -213,14 +421,23 @@ function showPreUploadForm() {
   `;
 
   document.getElementById('chatMessages').appendChild(wrap);
+  updateCurriculumSelects('pre');
   scrollBot();
 }
 
 function submitPreForm() {
-  const grade = document.getElementById('preGradeInput').value;
-  const subject = document.getElementById('preSubjectInput').value;
+  const curriculum = getSelectedCurriculum('pre');
+  const grade = curriculum.grade;
+  const semester = curriculum.semester;
+  const schoolType = curriculum.school_type;
+  const subject = curriculum.subject;
   const prevTopic = document.getElementById('prePrevTopicInput').value.trim();
   const career = document.getElementById('preCareerInput').value.trim();
+
+  if(!curriculum.subject_name) {
+    showToast('과목을 선택하거나 직접 입력해주세요!');
+    return;
+  }
 
   if(!career) {
     showToast('희망 진로를 입력해주세요!');
@@ -233,15 +450,21 @@ function submitPreForm() {
   studentInfo = {
     ...(studentInfo || {}),
     grade,
+    semester,
+    gradeWithSemester: curriculum.gradeWithSemester,
+    schoolType,
     subject,
+    subjectGroup: curriculum.subject_group,
+    subjectName: curriculum.subject_name,
+    includeSpecialized: curriculum.include_specialized,
     prevTopic,
     career
   };
 
-  document.getElementById('headerTitle').textContent = `${grade} ${subject} 수행평가`;
+  document.getElementById('headerTitle').textContent = `${grade} ${semester} ${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`학년: ${grade} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
+  addUserMsg(`학년: ${grade} / 학기: ${semester} / 학교 유형: ${schoolType} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
 
   addAiMsg(`좋아요! 이제 <strong>수행평가 안내문 사진</strong>을 올려주세요 📄<br>
     <span style="font-size:12px;color:var(--text-sub);">여러 장도 한 번에 업로드할 수 있어요!</span>`, true);
@@ -418,13 +641,14 @@ async function uploadAllImages() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          session_id: sessionId,
-          image_path: uploaded.path,
-          mime_type: uploaded.mime_type,
-          subject: studentInfo?.subject || '',
-          career: studentInfo?.career || '',
-          grade: studentInfo?.grade || '고등학생'
-        })
+  session_id: sessionId,
+  image_path: uploaded.path,
+  mime_type: uploaded.mime_type,
+  subject: studentInfo?.subject || '',
+  career: studentInfo?.career || '',
+  grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
+  school_type: studentInfo?.schoolType || '일반고'
+})
       });
 
       const data = await res.json();
@@ -467,13 +691,14 @@ async function requestTopics() {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        session_id: sessionId,
-        grade: studentInfo?.grade || '고등학생',
-        subject: studentInfo?.subject || '국어',
-        desired_career: studentInfo?.career || '',
-        previous_topic: studentInfo?.prevTopic || '',
-        assessment_info: assessmentInfo || null
-      })
+  session_id: sessionId,
+  grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
+  subject: studentInfo?.subject || '국어',
+  school_type: studentInfo?.schoolType || '일반고',
+  desired_career: studentInfo?.career || '',
+  previous_topic: studentInfo?.prevTopic || '',
+  assessment_info: assessmentInfo || null
+})
     });
 
     const data = await res.json();
@@ -514,10 +739,19 @@ function showCareerForm() {
 
 async function submitCareerOnly() {
   const career = document.getElementById('careerOnlyInput')?.value?.trim();
-  if(!career) { showToast('희망 진로를 입력해주세요!'); return; }
+
+  if(!career) {
+    showToast('희망 진로를 입력해주세요!');
+    return;
+  }
+
   document.getElementById('careerForm').style.display = 'none';
 
-  studentInfo = { ...(studentInfo || {}), career };
+  studentInfo = {
+    ...(studentInfo || {}),
+    career
+  };
+
   document.getElementById('headerBadge').textContent = career;
 
   addUserMsg(`희망 진로: ${career}`);
@@ -529,8 +763,9 @@ async function submitCareerOnly() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        grade: studentInfo?.grade || '고등학생',
+        grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
         subject: studentInfo?.subject || '국어',
+        school_type: studentInfo?.schoolType || '일반고',
         desired_career: career,
         previous_topic: studentInfo?.prevTopic || '',
         assessment_info: assessmentInfo || null
@@ -544,6 +779,7 @@ async function submitCareerOnly() {
     }
 
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
     removeLoading();
     updateStep(4);
     showTopicCards(data.topics);
@@ -578,7 +814,7 @@ function showSkipForm() {
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">학년 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="skipGradeInput">
+            <select class="form-select" id="skipGradeInput" onchange="updateCurriculumSelects('skip')">
               <option>고1</option>
               <option>고2</option>
               <option>고3</option>
@@ -586,16 +822,46 @@ function showSkipForm() {
           </div>
 
           <div class="form-group">
-            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
-            <select class="form-select" id="skipSubjectInput">
-              <option>국어</option>
-              <option>영어</option>
-              <option>수학</option>
-              <option>사회/역사</option>
-              <option>과학</option>
-              <option>기타</option>
+            <label class="form-label">학기 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSemesterInput" onchange="updateCurriculumSelects('skip')">
+              <option>1학기</option>
+              <option>2학기</option>
             </select>
           </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">학교 유형 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSchoolTypeInput" onchange="updateCurriculumSelects('skip')">
+              <option>일반고</option>
+              <option>자율형 사립고</option>
+              <option>특수목적고</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">교과군 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSubjectGroupInput" onchange="updateCurriculumSelects('skip')"></select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">과목 <span style="color:#ef4444;">*</span></label>
+            <select class="form-select" id="skipSubjectInput" onchange="updateCurriculumSelects('skip')"></select>
+          </div>
+
+          <div class="form-group" id="skipCustomSubjectWrap" style="display:none;">
+            <label class="form-label">직접 입력 과목명</label>
+            <input class="form-input" id="skipCustomSubjectInput" placeholder="예: 과학과제 연구, 고급 생명과학, 학교 자체 편성 과목" />
+          </div>
+        </div>
+
+        <div style="font-size:12px;color:var(--text-sub);line-height:1.6;">
+          ※ 학교 유형은 과목명이 아니라 과목 목록을 조정하기 위한 선택값입니다.<br>
+          ※ 자율형 사립고·특수목적고를 선택하면 전문교과 과목이 각 교과군에 함께 표시됩니다.<br>
+          ※ 학교별 교육과정 편성에 따라 실제 이수 학기는 다를 수 있습니다.
         </div>
 
         <div class="form-group">
@@ -619,28 +885,56 @@ function showSkipForm() {
   `;
 
   document.getElementById('chatMessages').appendChild(wrap);
+  updateCurriculumSelects('skip');
   scrollBot();
 }
 
 async function submitSkipForm() {
-  const grade      = document.getElementById('skipGradeInput').value;
-  const subject    = document.getElementById('skipSubjectInput').value;
+  const curriculum = getSelectedCurriculum('skip');
+  const grade      = curriculum.grade;
+  const semester   = curriculum.semester;
+  const schoolType = curriculum.school_type;
+  const subject    = curriculum.subject;
   const prevTopic  = document.getElementById('skipPrevTopicInput').value.trim();
   const assessInfo = document.getElementById('skipAssessInfoInput').value.trim();
   const career     = document.getElementById('skipCareerInput').value.trim();
 
-  if(!assessInfo) { showToast('수행평가 정보를 입력해주세요!'); return; }
-  if(!career)     { showToast('희망 진로를 입력해주세요!'); return; }
+  if(!curriculum.subject_name) {
+    showToast('과목을 선택하거나 직접 입력해주세요!');
+    return;
+  }
+
+  if(!assessInfo) {
+    showToast('수행평가 정보를 입력해주세요!');
+    return;
+  }
+
+  if(!career) {
+    showToast('희망 진로를 입력해주세요!');
+    return;
+  }
 
   document.getElementById('skipForm').style.display = 'none';
 
-  studentInfo = { grade, subject, prevTopic, career };
+  studentInfo = {
+    grade,
+    semester,
+    gradeWithSemester: curriculum.gradeWithSemester,
+    schoolType,
+    subject,
+    subjectGroup: curriculum.subject_group,
+    subjectName: curriculum.subject_name,
+    includeSpecialized: curriculum.include_specialized,
+    prevTopic,
+    career
+  };
+
   assessmentInfo = assessInfo;
 
-  document.getElementById('headerTitle').textContent = `${grade} ${subject} 수행평가`;
+  document.getElementById('headerTitle').textContent = `${grade} ${semester} ${subject} 수행평가`;
   document.getElementById('headerBadge').textContent = career;
 
-  addUserMsg(`학년: ${grade} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
+  addUserMsg(`학년: ${grade} / 학기: ${semester} / 학교 유형: ${schoolType} / 과목: ${subject}${prevTopic ? ' / 이전 주제: ' + prevTopic : ''} / 진로: ${career}`);
   addLoading();
 
   try {
@@ -649,8 +943,9 @@ async function submitSkipForm() {
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
         session_id: sessionId,
-        grade,
+        grade: curriculum.gradeWithSemester,
         subject,
+        school_type: schoolType,
         desired_career: career,
         previous_topic: prevTopic,
         assessment_info: assessInfo
@@ -664,12 +959,14 @@ async function submitSkipForm() {
     }
 
     if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
     removeLoading();
     updateStep(4);
     showTopicCards(data.topics);
+
   } catch(e) {
     removeLoading();
-    addAiMsg(`❌ ${e.message || '오류가 발생했어요. 다시 시도해주세요.'}`);
+    addAiMsg(`죄송해요. 주제 추천 중 오류가 발생했어요.<br><span style="color:#ef4444">${esc(e.message)}</span>`, true);
   }
 }
 
@@ -1108,13 +1405,14 @@ async function retryTopics() {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body: JSON.stringify({
-        session_id: sessionId,
-        grade: studentInfo?.grade || '고등학생',
-        subject: studentInfo?.subject || '국어',
-        desired_career: studentInfo?.career || '',
-        previous_topic: studentInfo?.prevTopic || '',
-        assessment_info: assessmentInfo || null
-      })
+  session_id: sessionId,
+  grade: studentInfo?.gradeWithSemester || studentInfo?.grade || '고등학생',
+  subject: studentInfo?.subject || '국어',
+  school_type: studentInfo?.schoolType || '일반고',
+  desired_career: studentInfo?.career || '',
+  previous_topic: studentInfo?.prevTopic || '',
+  assessment_info: assessmentInfo || null
+})
     });
 
     const data = await res.json();
