@@ -141,7 +141,73 @@ function scoreText(text, keywords) {
   return score;
 }
 
+function getNestedValue(source, keys) {
+  if (!source || typeof source !== 'object') return '';
+
+  for (const key of keys) {
+    const value = source[key];
+
+    if (value !== undefined && value !== null && String(value).trim()) {
+      return String(value).trim();
+    }
+  }
+
+  return '';
+}
+
+function parseMaybeJson(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  if (typeof value !== 'string') return null;
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function getRowSourceLink(row = {}) {
+  const direct = getNestedValue(row, [
+    'source_link',
+    'source_url',
+    'url',
+    'link',
+    'reference_url',
+    'reference_link',
+    'file_url',
+    'data_url',
+    'original_url',
+    'page_url'
+  ]);
+
+  if (direct) return direct;
+
+  const meta =
+    parseMaybeJson(row.meta) ||
+    parseMaybeJson(row.metadata) ||
+    parseMaybeJson(row.extra);
+
+  const metaLink = getNestedValue(meta, [
+    'source_link',
+    'source_url',
+    'url',
+    'link',
+    'reference_url',
+    'file_url'
+  ]);
+
+  if (metaLink) return metaLink;
+
+  const sourceText = String(row.source || '');
+  const urlMatch = sourceText.match(/https?:\/\/[^\s)]+/i);
+
+  return urlMatch ? urlMatch[0] : '';
+}
+
 function rowToText(row, label = '위닝DB 항목') {
+  const sourceLink = getRowSourceLink(row);
+
   return `
 [${label}]
 - 학년: ${row.grade || ''}
@@ -149,6 +215,7 @@ function rowToText(row, label = '위닝DB 항목') {
 - 진로분야: ${row.career_field || ''}
 - 자료명: ${row.title || ''}
 - 출처: ${row.source || ''}
+- 출처 링크: ${sourceLink || '없음'}
 - 내용:
 ${row.content || ''}
 `.trim();
@@ -160,7 +227,9 @@ function packRows(rows, maxChars, label) {
 
   for (const row of rows) {
     const piece = rowToText(row, label);
+
     if (total + piece.length > maxChars) break;
+
     pieces.push(piece);
     total += piece.length;
   }
@@ -188,40 +257,40 @@ export async function loadDynamicAssessmentKnowledge({
 
   const gradeText = String(grade || '').trim();
 
-const baseGrade = gradeText.includes('고1') ? '고1'
-  : gradeText.includes('고2') ? '고2'
-  : gradeText.includes('고3') ? '고3'
-  : gradeText;
+  const baseGrade = gradeText.includes('고1') ? '고1'
+    : gradeText.includes('고2') ? '고2'
+    : gradeText.includes('고3') ? '고3'
+    : gradeText;
 
-const gradeAlias = baseGrade === '고1' ? '1학년'
-  : baseGrade === '고2' ? '2학년'
-  : baseGrade === '고3' ? '3학년'
-  : '';
+  const gradeAlias = baseGrade === '고1' ? '1학년'
+    : baseGrade === '고2' ? '2학년'
+    : baseGrade === '고3' ? '3학년'
+    : '';
 
-const legacySubject = normalizedSubject === '사회' ? '사회역사' : '';
+  const legacySubject = normalizedSubject === '사회' ? '사회역사' : '';
 
-const subjectParts = String(subject || '')
-  .split('/')
-  .map(v => v.trim())
-  .filter(Boolean);
+  const subjectParts = String(subject || '')
+    .split('/')
+    .map((v) => v.trim())
+    .filter(Boolean);
 
-const gradeCandidates = unique([
-  gradeText,
-  baseGrade,
-  gradeAlias,
-  '공통',
-  '전체',
-  '고등학생'
-]);
+  const gradeCandidates = unique([
+    gradeText,
+    baseGrade,
+    gradeAlias,
+    '공통',
+    '전체',
+    '고등학생'
+  ]);
 
-const subjectCandidates = unique([
-  normalizedSubject,
-  legacySubject,
-  subject,
-  ...subjectParts,
-  '공통',
-  '전체'
-]);
+  const subjectCandidates = unique([
+    normalizedSubject,
+    legacySubject,
+    subject,
+    ...subjectParts,
+    '공통',
+    '전체'
+  ]);
 
   const keywords = unique([
     career,
@@ -234,7 +303,7 @@ const subjectCandidates = unique([
   try {
     const { data: currentRows = [], error: currentError } = await winningSupabaseAdmin
       .from(WINNING_KNOWLEDGE_TABLE)
-      .select('id, grade, subject, knowledge_type, career_field, title, content, source, memo, created_at')
+      .select('*')
       .eq('is_active', true)
       .eq('knowledge_type', knowledgeType)
       .in('grade', gradeCandidates)
@@ -246,8 +315,19 @@ const subjectCandidates = unique([
 
     const currentScored = currentRows
       .map((row) => {
-        const blob = [row.career_field, row.title, row.content, row.source, row.memo].join(' ');
-        return { row, score: scoreText(blob, keywords) };
+        const blob = [
+          row.career_field,
+          row.title,
+          row.content,
+          row.source,
+          row.memo,
+          getRowSourceLink(row)
+        ].join(' ');
+
+        return {
+          row,
+          score: scoreText(blob, keywords)
+        };
       })
       .sort((a, b) => b.score - a.score)
       .slice(0, maxItems)
@@ -263,7 +343,7 @@ const subjectCandidates = unique([
     if (includeOtherSubjects) {
       const { data: allRows = [], error: otherError } = await winningSupabaseAdmin
         .from(WINNING_KNOWLEDGE_TABLE)
-        .select('id, grade, subject, knowledge_type, career_field, title, content, source, memo, created_at')
+        .select('*')
         .eq('is_active', true)
         .eq('knowledge_type', knowledgeType)
         .in('grade', gradeCandidates)
@@ -273,11 +353,23 @@ const subjectCandidates = unique([
       if (otherError) throw otherError;
 
       const currentSubjectSet = new Set(subjectCandidates);
+
       const otherScored = allRows
         .filter((row) => !currentSubjectSet.has(row.subject))
         .map((row) => {
-          const blob = [row.career_field, row.title, row.content, row.source, row.memo].join(' ');
-          return { row, score: scoreText(blob, [career, selectedTopic]) };
+          const blob = [
+            row.career_field,
+            row.title,
+            row.content,
+            row.source,
+            row.memo,
+            getRowSourceLink(row)
+          ].join(' ');
+
+          return {
+            row,
+            score: scoreText(blob, [career, selectedTopic])
+          };
         })
         .filter((item) => item.score > 0)
         .sort((a, b) => b.score - a.score)
@@ -286,13 +378,20 @@ const subjectCandidates = unique([
 
       if (otherScored.length) {
         pieces.push('\n[다른 과목 연계 후보 - AI가 연계 가능할 때만 사용]');
-        pieces.push(...packRows(otherScored, Math.max(1200, Math.floor(maxChars * 0.45)), '다른 과목 후보'));
+        pieces.push(
+          ...packRows(
+            otherScored,
+            Math.max(1200, Math.floor(maxChars * 0.45)),
+            '다른 과목 후보'
+          )
+        );
       }
     }
 
     return pieces.join('\n\n').trim() || '관련 위닝DB 항목 없음';
   } catch (error) {
     console.error('홈페이지 Supabase 위닝DB 지식 조회 오류:', error);
+
     return '홈페이지 Supabase 위닝DB 지식 조회 실패 또는 테이블 미생성';
   }
 }
