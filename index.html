@@ -736,7 +736,7 @@
 const API = '/api';
 
 const SUPABASE_URL = 'https://orwngbyiylchpzufwvej.supabase.co';
-const SUPABASE_ANON_KEY = '여기에_기존_index.html에_있던_SUPABASE_ANON_KEY를_그대로_넣으세요';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yd25nYnlpeWxjaHB6dWZ3dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzkyMzIsImV4cCI6MjA4ODQ1NTIzMn0.LnKlvHTo9Q_teQd-MTNpdVnGcTT27szXcO-GzGxwfmg';
 const STORAGE_BUCKET = 'assessment-images';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -751,6 +751,7 @@ let latestPlanReportId = null;
 let latestEvaluationReportId = null;
 let pendingImages = [];
 let topicDataStore = [];
+let prevSessionData = null;
 
 function getSubjectGroups() {
   return ['국어','수학','영어','한국사','사회','과학','체육','예술','기술·가정','정보','제2외국어','한문','교양','직접 입력'];
@@ -860,12 +861,136 @@ async function doLogin() {
     document.getElementById('headerBadge').textContent = data.name;
     document.getElementById('loginOverlay').style.display = 'none';
     updateCallUsage(data.call_count || 0, data.call_limit || 0);
-    showWelcome(data.name);
+
+    const hasPreviousWork = data.previous && (
+      data.previous.selected_topic ||
+      data.previous.topics ||
+      data.previous.resources ||
+      data.previous.evaluation ||
+      data.previous.assessment_info
+    );
+
+    if(hasPreviousWork) {
+      showPreviousHistory(data.previous);
+    } else {
+      showWelcome(data.name);
+    }
   } catch(e) {
     errEl.textContent = '서버 연결 실패. 잠시 후 다시 시도해주세요.';
     errEl.style.display = 'block';
     btn.textContent = '시작하기 →';
     btn.disabled = false;
+  }
+}
+
+function showPreviousHistory(prev) {
+  prevSessionData = prev;
+  document.getElementById('chatMessages').innerHTML = '';
+
+  const selected = prev.selected_topic || '아직 선택 전';
+  addAiMsg(`반갑습니다, <strong>${esc(studentName)}</strong>님! 👋<br><br>
+    지난번 진행 기록을 불러왔습니다.<br>
+    📚 학년/과목: <strong>${esc(prev.grade || '-')} / ${esc(prev.subject || '-')}</strong><br>
+    🎯 선택 주제: <strong>${esc(selected)}</strong><br><br>
+    평가 리포트까지 만들지 않았어도, 선택한 주제부터 이어서 진행할 수 있습니다.`, true);
+
+  addAiMsg(`
+    <div class="quick-btns">
+      <button class="quick-btn" onclick="resumeFromPrev()">▶ 이어서 하기</button>
+      <button class="quick-btn" onclick="showWelcome('${escJs(studentName)}')">🔄 새로 시작하기</button>
+    </div>`, true);
+}
+
+function resumeFromPrev() {
+  if(!prevSessionData) return;
+  const p = prevSessionData;
+  let topicObj = { title:p.selected_topic || '', details:{} };
+
+  if(p.selected_topic_detail) {
+    const details = {};
+    p.selected_topic_detail.split('\n').forEach(line => {
+      const idx = line.indexOf(': ');
+      if(idx > -1) details[line.slice(0, idx)] = line.slice(idx + 2);
+    });
+    topicObj.details = details;
+  } else if(p.topics && p.selected_topic) {
+    const parsed = parseTopics(p.topics);
+    const match = parsed.find(t => t.title && t.title.includes((p.selected_topic || '').slice(0, 10)));
+    if(match) topicObj = match;
+  }
+
+  resumeSession(p, topicObj);
+}
+
+function resumeSession(prev, topicObj) {
+  document.getElementById('chatMessages').innerHTML = '';
+
+  studentInfo = {
+    grade:prev.grade || '고등학생',
+    semester:'',
+    gradeWithSemester:prev.grade || '고등학생',
+    schoolType:'일반고',
+    subject:prev.subject || '',
+    prevTopic:'',
+    career:prev.career || ''
+  };
+  assessmentInfo = prev.assessment_info || '';
+  selectedTopic = prev.selected_topic || null;
+
+  document.getElementById('headerTitle').textContent = `${studentInfo.grade} ${studentInfo.subject || '수행평가'} 수행평가`;
+  document.getElementById('headerBadge').textContent = studentInfo.career || studentName;
+
+  if(selectedTopic) {
+    updateStep(5);
+    addAiMsg(`좋아요. <strong>${esc(selectedTopic)}</strong> 주제로 이어서 진행합니다.<br><br>
+      설계 리포트가 생성되어 있었다면 <strong>저장 리포트 목록</strong>에서 다시 열 수 있습니다. 거기서 작성 폼에 이어 작성한 뒤 평가 리포트를 받으면 됩니다.<br><br>
+      <div class="quick-btns">
+        <button class="quick-btn" onclick="openReportListModal()">📘 저장 리포트 목록 열기</button>
+        <button class="quick-btn" onclick="rebuildPlanFromSelectedTopic()">🔁 설계 리포트 다시 만들기</button>
+      </div>`, true);
+  } else if(prev.topics) {
+    updateStep(4);
+    addAiMsg('지난번에 추천받은 주제 중에서 이어서 선택하세요.', true);
+    showTopicCards(prev.topics);
+  } else {
+    updateStep(3);
+    addAiMsg('저장된 선택 주제가 없어 주제 추천 단계부터 다시 진행합니다.', true);
+    requestTopics();
+  }
+}
+
+async function rebuildPlanFromSelectedTopic() {
+  if(!selectedTopic) {
+    showToast('선택된 주제가 없습니다.');
+    return;
+  }
+  const detailText = prevSessionData?.selected_topic_detail || '';
+  addUserMsg(`"${selectedTopic}" 설계 리포트를 다시 만들게요.`);
+  addLoading();
+
+  try {
+    await saveSelectedTopic(selectedTopic, detailText);
+    const res = await apiFetch(`${API}/find-resources`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        session_id:sessionId,
+        selected_topic:selectedTopic,
+        selected_topic_detail:detailText
+      })
+    });
+
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error_message || data.detail || '설계 리포트 생성 중 오류가 발생했어요.');
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
+    removeLoading();
+    latestPlanReport = data.plan_report || data.resources || '';
+    latestPlanReportId = data.report_id || null;
+    showPlanReportModal(selectedTopic, latestPlanReport, latestPlanReportId);
+  } catch(e) {
+    removeLoading();
+    addAiMsg(`❌ ${esc(e.message || '설계 리포트 생성 중 오류가 발생했어요.')}`, true);
   }
 }
 
@@ -1199,52 +1324,129 @@ async function requestTopics() {
   }
 }
 
+function cleanTopicKey(key) {
+  return stripMarkdown(String(key || ''))
+    .replace(/^[-•]\s*/, '')
+    .replace(/^\d+\s*[\.\)]\s*/, '')
+    .trim();
+}
+
+function cleanTopicTitle(title, fallback) {
+  return stripMarkdown(String(title || ''))
+    .replace(/^[-•]\s*/, '')
+    .replace(/^추천\s*(?:주제\s*)?\d+\s*[:：.\-–]?\s*/, '')
+    .replace(/^주제명\s*[:：]\s*/, '')
+    .replace(/[\[\]\*\#`]/g, '')
+    .trim() || fallback;
+}
+
+function parseTopicDetailLines(lines) {
+  const details = {};
+  let curKey = '';
+
+  for(const rawLine of lines) {
+    const line = String(rawLine || '').trim();
+    if(!line) continue;
+
+    const m = line.match(/^(?:[-•]\s*)?(?:\d+\s*[\.\)]\s*)?([^:：]{1,40})[:：]\s*(.*)$/);
+    if(m) {
+      const key = cleanTopicKey(m[1]);
+      const value = stripMarkdown(m[2] || '').trim();
+      if(!key) continue;
+
+      if(key === '주제명') {
+        details.__title = value;
+        curKey = '';
+      } else {
+        details[key] = value;
+        curKey = key;
+      }
+      continue;
+    }
+
+    if(curKey) details[curKey] = `${details[curKey]} ${stripMarkdown(line)}`.trim();
+  }
+
+  return details;
+}
+
 function parseTopics(text) {
   const raw = stripMarkdown(String(text || '')).trim();
   if(!raw) return [];
 
-  const blocks = raw
-    .split(/\n(?=\s*(?:주제\s*)?\d+\s*[\.\)]|\s*\d+\s*번\s*주제|\s*[-•]\s*)/g)
-    .map(v => v.trim())
-    .filter(Boolean);
+  // "0. 선정 근거", "1. 핵심 내용" 같은 세부 항목은 새 추천 주제로 자르지 않는다.
+  // 오직 "추천 1:", "추천 주제 1:" 형식만 추천 주제의 시작으로 본다.
+  const headerRegex = /^\s*추천\s*(?:주제\s*)?([123])\s*[:：.\-–]?\s*(.*)$/gmi;
+  const headers = [...raw.matchAll(headerRegex)];
 
-  const source = blocks.length >= 2 ? blocks : raw.split(/\n{2,}/).map(v => v.trim()).filter(Boolean);
+  if(headers.length) {
+    return headers.slice(0, 3).map((match, idx) => {
+      const start = match.index;
+      const end = headers[idx + 1]?.index ?? raw.length;
+      const block = raw.slice(start, end).trim();
+      const lines = block.split('\n').map(v => v.trim()).filter(Boolean);
+      const details = parseTopicDetailLines(lines.slice(1));
+      const title = cleanTopicTitle(match[2] || details.__title, `추천 주제 ${idx + 1}`);
+      delete details.__title;
+      return { title, raw:block, details };
+    }).filter(t => t.title);
+  }
 
-  return source.slice(0, 5).map((block, idx) => {
+  const fallbackBlocks = raw.split(/\n{2,}/).map(v => v.trim()).filter(Boolean).slice(0, 3);
+  return fallbackBlocks.map((block, idx) => {
     const lines = block.split('\n').map(v => v.trim()).filter(Boolean);
-    let title = lines[0] || `추천 주제 ${idx+1}`;
-    title = title.replace(/^[-•]\s*/, '').replace(/^(주제\s*)?\d+\s*[\.\)]\s*/, '').replace(/^\d+\s*번\s*주제\s*[:：]?\s*/, '').trim();
-    title = title.replace(/^주제명\s*[:：]\s*/, '').trim();
-
-    const details = {};
-    for(const line of lines.slice(1)) {
-      const m = line.match(/^(.{1,28}?)[：:](.*)$/);
-      if(m) details[m[1].trim()] = m[2].trim();
-    }
-
+    const details = parseTopicDetailLines(lines.slice(1));
+    const title = cleanTopicTitle(lines[0], `추천 주제 ${idx + 1}`);
+    delete details.__title;
     return { title, raw:block, details };
   });
 }
 
+function buildTopicPreview(t) {
+  const priority = ['선정 근거', '핵심 내용', '이전 주제와의 연결', '다른 과목 연계 포인트', '추후 심화 방향', '추천 이유', '점수 강점'];
+  const used = new Set();
+  const entries = [];
+
+  for(const label of priority) {
+    const foundKey = Object.keys(t.details || {}).find(k => cleanTopicKey(k).includes(label));
+    if(foundKey && !used.has(foundKey)) {
+      used.add(foundKey);
+      entries.push([cleanTopicKey(foundKey), t.details[foundKey]]);
+    }
+  }
+
+  for(const entry of Object.entries(t.details || {})) {
+    if(!used.has(entry[0])) entries.push([cleanTopicKey(entry[0]), entry[1]]);
+  }
+
+  if(!entries.length) {
+    const rawPreview = stripMarkdown(t.raw || '').replace(/^추천\s*(?:주제\s*)?\d+\s*[:：.\-–]?\s*/i, '').slice(0, 160);
+    return `<div class="card-desc">${esc(rawPreview)}${rawPreview.length >= 160 ? '...' : ''}</div>`;
+  }
+
+  return `<div class="card-desc" style="margin-top:10px;display:flex;flex-direction:column;gap:7px;">${entries.slice(0, 7).map(([k,v]) => `
+    <div style="font-size:12px;line-height:1.55;color:var(--text-sub);">
+      <span style="font-weight:800;color:var(--primary);">${esc(k)}</span>
+      <span> ${esc(stripMarkdown(String(v || '')))}</span>
+    </div>`).join('')}</div>`;
+}
+
 function showTopicCards(topicsText) {
-  topicDataStore = parseTopics(topicsText);
+  topicDataStore = parseTopics(topicsText).slice(0, 3);
 
   if(!topicDataStore.length) {
     addAiMsg('추천 주제를 파싱하지 못했어요. 다시 시도해주세요.');
     return;
   }
 
-  const cards = topicDataStore.map((t, i) => {
-    const desc = Object.values(t.details || {}).join(' ').slice(0, 120) || t.raw.slice(0, 120);
-    return `
+  const cards = topicDataStore.map((t, i) => `
       <div class="recommend-card" id="topicCard${i}" onclick="openTopicModal(${i})">
         <div class="card-num">추천 주제 ${i+1}</div>
         <div class="card-title">${esc(t.title)}</div>
-        <div class="card-desc">${esc(desc)}${desc.length >= 120 ? '...' : ''}</div>
-      </div>`;
-  }).join('');
+        ${buildTopicPreview(t)}
+      </div>`).join('');
 
-  addAiMsg(`수행평가 조건과 진로를 바탕으로 주제를 추천했어요. 마음에 드는 주제를 선택하면 <strong>통합 설계 리포트</strong>를 바로 만들어드릴게요.<div class="recommend-cards">${cards}</div><div class="quick-btns"><button class="quick-btn" onclick="retryTopics()">🔄 다른 주제 다시 추천</button></div>`, true);
+  addAiMsg(`수행평가 조건과 진로를 바탕으로 주제 3개를 추천했어요. 각 주제 아래에 선정 근거와 핵심 정보를 함께 정리했습니다. 마음에 드는 주제를 선택하면 <strong>통합 설계 리포트</strong>를 바로 만들어드릴게요.<div class="recommend-cards">${cards}</div><div class="quick-btns"><button class="quick-btn" onclick="retryTopics()">🔄 다른 주제 다시 추천</button></div>`, true);
 }
 
 function openTopicModal(idx) {
@@ -1270,6 +1472,25 @@ function closeTopicModal() {
   document.getElementById('topicModal').classList.remove('show');
 }
 
+async function saveSelectedTopic(topicTitle, detailText) {
+  if(!sessionId || !topicTitle) return false;
+  try {
+    const res = await apiFetch(`${API}/save-topic-selection`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        session_id:sessionId,
+        selected_topic:topicTitle,
+        selected_topic_detail:detailText || ''
+      })
+    }, 15000);
+    return res.ok;
+  } catch(e) {
+    console.warn('선택 주제 즉시 저장 실패:', e);
+    return false;
+  }
+}
+
 async function confirmTopic(idx) {
   const t = topicDataStore[idx];
   if(!t) return;
@@ -1292,6 +1513,9 @@ async function confirmTopic(idx) {
   addLoading();
 
   const detailText = Object.entries(t.details || {}).map(([k,v]) => `${k}: ${v}`).join('\n');
+
+  const savedNow = await saveSelectedTopic(t.title, detailText);
+  if(savedNow) showToast('선택 주제를 저장했어요. 다음에 이어서 할 수 있습니다.');
 
   try {
     const res = await apiFetch(`${API}/find-resources`, {
