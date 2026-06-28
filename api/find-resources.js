@@ -30,7 +30,14 @@ export default async function handler(req, res) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
-    const usage = await incrementCallCount(session.student_code);
+    const selectedSavedSession = await updateSession(session_id, {
+      selected_topic,
+      selected_topic_detail
+    });
+
+    await dbSaveConversation(selectedSavedSession);
+
+    const usage = await incrementCallCount(selectedSavedSession.student_code);
 
     if (!usage.allowed) {
       return res.status(429).json({
@@ -38,17 +45,17 @@ export default async function handler(req, res) {
       });
     }
 
-    const grade = session.grade || '고등학생';
-    const subject = session.subject || '국어';
-    const schoolType = session.school_type || '일반고';
-    const career = session.career || '';
+    const grade = selectedSavedSession.grade || '고등학생';
+    const subject = selectedSavedSession.subject || '국어';
+    const schoolType = selectedSavedSession.school_type || '일반고';
+    const career = selectedSavedSession.career || '';
 
     const dynamicResourceKnowledge = await loadDynamicAssessmentKnowledge({
       grade,
       subject,
       career,
       selectedTopic: selected_topic,
-      assessmentInfo: session.assessment_info || '',
+      assessmentInfo: selectedSavedSession.assessment_info || '',
       purpose: 'resource',
       maxItems: 8,
       maxChars: 6500,
@@ -178,10 +185,10 @@ ${selected_topic_detail || '없음'}
 - 학교 유형: ${schoolType}
 - 선택 과목: ${subject}
 - 희망 진로: ${career || '미입력'}
-- 이전 주제: ${session.previous_topic || '없음'}
+- 이전 주제: ${selectedSavedSession.previous_topic || '없음'}
 
 [수행평가 안내문 요약]
-${session.assessment_info || '안내문 정보 없음'}
+${selectedSavedSession.assessment_info || '안내문 정보 없음'}
 
 작업:
 - 선택 주제를 기준으로 통합 수행평가 설계 리포트를 작성하라.
@@ -203,8 +210,8 @@ ${session.assessment_info || '안내문 정보 없음'}
     await dbSaveConversation(updated);
 
     const savedReport = await saveAssessmentReport({
-      student_code: session.student_code,
-      student_name: session.student_name || '',
+      student_code: selectedSavedSession.student_code,
+      student_name: selectedSavedSession.student_name || '',
       report_type: 'plan',
       title: selected_topic,
       grade,
@@ -227,6 +234,7 @@ ${session.assessment_info || '안내문 정보 없음'}
     });
   } catch (error) {
     console.error('find resources error:', error);
+
     return res.status(500).json({
       detail: '설계 리포트 생성 중 오류가 발생했습니다.',
       error_message: error?.message || String(error)
