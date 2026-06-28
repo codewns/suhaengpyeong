@@ -988,6 +988,7 @@ async function rebuildPlanFromSelectedTopic() {
     latestPlanReport = data.plan_report || data.resources || '';
     latestPlanReportId = data.report_id || null;
     showPlanReportModal(selectedTopic, latestPlanReport, latestPlanReportId);
+    showSubmissionFormInChat(selectedTopic);
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${esc(e.message || '설계 리포트 생성 중 오류가 발생했어요.')}`, true);
@@ -1537,8 +1538,9 @@ async function confirmTopic(idx) {
     latestPlanReport = data.plan_report || data.resources || '';
     latestPlanReportId = data.report_id || null;
 
-    addAiMsg('선택 주제에 대한 <strong>통합 수행평가 설계 리포트</strong>를 준비했어요. 팝업에서 주제 정보, 추천 자료, 서론·본론·결론 구조를 확인하고 바로 작성하세요.', true, true);
+    addAiMsg('선택 주제에 대한 <strong>통합 수행평가 설계 리포트</strong>를 준비했어요. 팝업에서 주제 정보, 추천 자료, 서론·본론·결론 구조를 확인하세요. 실제 작성 제출폼은 채팅창에 따로 표시됩니다.', true, true);
     showPlanReportModal(t.title, latestPlanReport, latestPlanReportId);
+    showSubmissionFormInChat(t.title);
   } catch(e) {
     removeLoading();
     addAiMsg(`❌ ${esc(e.message || '설계 리포트 생성 중 오류가 발생했어요.')}`, true);
@@ -1561,9 +1563,6 @@ function showPlanReportModal(topic, reportText, reportId=null) {
     reportId
   });
   document.getElementById('reportModal').classList.add('show');
-
-  const topicInput = document.getElementById('modalTopicInput');
-  if(topicInput && !topicInput.value) topicInput.value = selectedTopic || topic || '';
 }
 
 function showEvaluationReportModal(topic, reportText, reportId=null) {
@@ -1578,9 +1577,21 @@ function showEvaluationReportModal(topic, reportText, reportId=null) {
   document.getElementById('reportModal').classList.add('show');
 }
 
+function linkifyEscapedHtml(html) {
+  return String(html || '').replace(/(https?:\/\/[^\s<]+)/g, (url) => {
+    const cleanUrl = url.replace(/[.,;:!?]+$/, '');
+    const tail = url.slice(cleanUrl.length);
+    return `<a href="${cleanUrl}" target="_blank" rel="noopener noreferrer" style="color:var(--primary);font-weight:800;text-decoration:underline;">${cleanUrl}</a>${tail}`;
+  });
+}
+
+function formatReportContent(content) {
+  return linkifyEscapedHtml(esc(stripMarkdown(content || ''))).replace(/\n/g, '<br>');
+}
+
 function buildReportHtml({title, type, content, reportId}) {
   const typeLabel = type === 'evaluation' ? '평가 리포트' : '설계 리포트';
-  const safeContent = esc(stripMarkdown(content || '')).replace(/\n/g, '<br>');
+  const safeContent = formatReportContent(content || '');
 
   if(type === 'evaluation') {
     return `
@@ -1618,53 +1629,17 @@ function buildReportHtml({title, type, content, reportId}) {
         </div>
 
         <div class="report-text">${safeContent}</div>
-
-        <div class="plan-composer">
-          <div class="plan-composer-title">📝 수행평가 직접 작성하기</div>
-          <div class="plan-composer-desc">
-            위 설계 리포트를 참고해서 아래 작성 폼에 직접 내용을 작성하세요.
-            서론·본론·결론에 무엇을 넣어야 하는지는 위 리포트에 정리되어 있고,
-            아래는 실제 작성용 폼입니다.
-          </div>
-
-          <div class="composer-field">
-            <label class="composer-label">주제</label>
-            <div class="composer-helper">최종 선택한 주제를 그대로 두거나 필요시 수정하세요.</div>
-            <input id="modalTopicInput" class="composer-input">
-          </div>
-
-          <div class="composer-field">
-            <label class="composer-label">서론</label>
-            <div class="composer-helper">문제의식, 주제 선정 이유, 탐구 목적을 중심으로 작성하세요.</div>
-            <textarea id="modalIntroInput" class="composer-textarea intro"></textarea>
-          </div>
-
-          <div class="composer-field">
-            <label class="composer-label">본론</label>
-            <div class="composer-helper">교과 개념, 자료 분석, 사례 적용, 자신의 해석을 충분히 담아 작성하세요.</div>
-            <textarea id="modalBodyInput" class="composer-textarea body"></textarea>
-          </div>
-
-          <div class="composer-field">
-            <label class="composer-label">결론</label>
-            <div class="composer-helper">탐구 결과 정리, 느낀 점, 진로 연계, 후속 탐구 방향을 정리하세요.</div>
-            <textarea id="modalConclusionInput" class="composer-textarea conclusion"></textarea>
-          </div>
-
-          <div class="composer-submit-wrap">
-            <button id="modalSubmitBtn" class="composer-submit-btn" onclick="submitPlanFromModal()">📊 제출하고 평가 리포트 받기</button>
-          </div>
-        </div>
       </div>
 
       <aside class="report-actions">
         <div class="report-action-card">
           <div style="font-size:13px;font-weight:900;margin-bottom:8px;">리포트 관리</div>
           <div style="font-size:12px;color:var(--text-sub);line-height:1.6;margin-bottom:12px;">
-            리포트는 별도 팝업창으로 열리며, 아래 버튼으로 인쇄 창을 열어 PDF로 저장할 수 있습니다.
+            작성 제출폼은 리포트 안이 아니라 채팅창에 따로 표시됩니다. 리포트를 확인한 뒤 창을 닫고 채팅창의 작성 폼에서 제출하세요.
           </div>
           <button class="report-action-btn" onclick="downloadCurrentReportPdf('${escJs(title)}')">PDF로 저장 / 인쇄</button>
           <button class="report-action-btn secondary" style="margin-top:8px;" onclick="openReportListModal()">저장 리포트 목록</button>
+          <button class="report-action-btn secondary" style="margin-top:8px;" onclick="closeReportModal()">창 닫고 작성하기</button>
           <div class="report-help">버튼을 누른 뒤 인쇄 대상에서 “PDF로 저장”을 선택하면 파일로 저장됩니다.</div>
         </div>
       </aside>
@@ -1673,6 +1648,113 @@ function buildReportHtml({title, type, content, reportId}) {
 
 function closeReportModal() {
   document.getElementById('reportModal').classList.remove('show');
+}
+
+function showSubmissionFormInChat(topicValue='') {
+  const uid = `writingForm_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+  const safeTopic = esc(topicValue || selectedTopic || '');
+
+  addAiMsg(`
+    <div class="plan-composer chat-writing-form" id="${uid}">
+      <div class="plan-composer-title">📝 수행평가 제출폼</div>
+      <div class="plan-composer-desc">
+        설계 리포트는 팝업에서 확인하고, 실제 작성·평가 제출은 이 채팅창 폼에서 진행합니다.
+        서론·본론·결론은 학생 본인의 문장으로 작성하세요.
+      </div>
+
+      <div class="composer-field">
+        <label class="composer-label">주제</label>
+        <div class="composer-helper">최종 선택한 주제를 그대로 두거나 필요시 수정하세요.</div>
+        <input class="composer-input writing-topic" value="${safeTopic}">
+      </div>
+
+      <div class="composer-field">
+        <label class="composer-label">서론</label>
+        <div class="composer-helper">문제의식, 주제 선정 이유, 탐구 목적을 중심으로 작성하세요.</div>
+        <textarea class="composer-textarea intro writing-intro"></textarea>
+      </div>
+
+      <div class="composer-field">
+        <label class="composer-label">본론</label>
+        <div class="composer-helper">교과 개념, 자료 분석, 사례 적용, 자신의 해석을 충분히 담아 작성하세요.</div>
+        <textarea class="composer-textarea body writing-body"></textarea>
+      </div>
+
+      <div class="composer-field">
+        <label class="composer-label">결론</label>
+        <div class="composer-helper">탐구 결과 정리, 느낀 점, 진로 연계, 후속 탐구 방향을 정리하세요.</div>
+        <textarea class="composer-textarea conclusion writing-conclusion"></textarea>
+      </div>
+
+      <div class="composer-submit-wrap">
+        <button class="composer-submit-btn" onclick="submitChatWritingForm('${uid}')">📊 제출하고 평가 리포트 받기</button>
+      </div>
+    </div>
+  `, true, true);
+}
+
+async function submitChatWritingForm(uid) {
+  const root = document.getElementById(uid);
+  if(!root) {
+    showToast('작성 폼을 찾을 수 없습니다.');
+    return;
+  }
+
+  const topic = root.querySelector('.writing-topic')?.value?.trim() || '';
+  const intro = root.querySelector('.writing-intro')?.value?.trim() || '';
+  const body = root.querySelector('.writing-body')?.value?.trim() || '';
+  const conclusion = root.querySelector('.writing-conclusion')?.value?.trim() || '';
+  const btn = root.querySelector('.composer-submit-btn');
+
+  if(!topic || !intro || !body || !conclusion) {
+    showToast('주제, 서론, 본론, 결론을 모두 작성해주세요.');
+    return;
+  }
+
+  const combinedText = `주제: ${topic}\n\n[서론]\n${intro}\n\n[본론]\n${body}\n\n[결론]\n${conclusion}`;
+
+  try {
+    if(btn) {
+      btn.disabled = true;
+      btn.textContent = '평가 리포트 생성 중...';
+    }
+
+    addUserMsg(`${topic} 수행평가를 제출합니다.`);
+    addLoading();
+
+    const res = await apiFetch(`${API}/evaluate-text`, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        session_id:sessionId,
+        submission_text:combinedText,
+        confirm_submit:true
+      })
+    });
+
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.error_message || data.detail || '평가 리포트 생성 중 오류가 발생했습니다.');
+
+    if(data.call_count !== undefined) updateCallUsage(data.call_count, data.call_limit || 0);
+
+    removeLoading();
+
+    const reportText = data.evaluation || data.evaluation_report || data.report_content || data.result || data.feedback || '평가 리포트가 생성되었습니다.';
+    latestEvaluationReportId = data.report_id || null;
+    selectedTopic = topic;
+
+    addAiMsg('평가가 완료되었습니다. 평가 리포트를 팝업에서 확인하세요.', true, true);
+    showEvaluationReportModal(topic, reportText, latestEvaluationReportId);
+  } catch(err) {
+    removeLoading();
+    console.error(err);
+    showToast(err.message || '평가 리포트 생성 중 오류가 발생했습니다.');
+  } finally {
+    if(btn) {
+      btn.disabled = false;
+      btn.textContent = '📊 제출하고 평가 리포트 받기';
+    }
+  }
 }
 
 async function submitPlanFromModal() {
