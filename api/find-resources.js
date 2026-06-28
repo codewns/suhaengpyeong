@@ -8,35 +8,6 @@ import {
 import { callText } from './_lib/gemini.js';
 import { saveAssessmentReport } from './_lib/reports.js';
 
-function splitCombinedResult(text = '') {
-  const raw = String(text || '').trim();
-
-  const resourceMarker = '[자료 추천]';
-  const planMarker = '[수행평가 설계 리포트]';
-
-  const resourceIdx = raw.indexOf(resourceMarker);
-  const planIdx = raw.indexOf(planMarker);
-
-  let resources = raw;
-  let planReport = raw;
-
-  if (resourceIdx !== -1 && planIdx !== -1 && resourceIdx < planIdx) {
-    resources = raw.slice(resourceIdx + resourceMarker.length, planIdx).trim();
-    planReport = raw.slice(planIdx + planMarker.length).trim();
-  } else if (planIdx !== -1) {
-    resources = raw.slice(0, planIdx).replace(resourceMarker, '').trim();
-    planReport = raw.slice(planIdx + planMarker.length).trim();
-  } else if (resourceIdx !== -1) {
-    resources = raw.slice(resourceIdx + resourceMarker.length).trim();
-    planReport = raw;
-  }
-
-  return {
-    resources: resources || raw,
-    planReport: planReport || raw
-  };
-}
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ detail: 'Method not allowed' });
@@ -85,67 +56,36 @@ export default async function handler(req, res) {
     });
 
     const system = `
-당신은 고등학생 수행평가 자료 추천 및 설계 리포트 작성 전문가입니다.
-이 단계의 목표는 단순 자료 추천이 아니라, 학생이 직접 보고서를 작성할 수 있도록 "선택 주제-자료-서론-본론-결론-평가 기준 대응"을 하나의 설계 리포트로 정리하는 것입니다.
+당신은 고등학생 수행평가 설계 리포트 작성 전문가입니다.
+
+목표:
+학생이 선택한 주제에 대해 "통합 수행평가 설계 리포트"를 작성한다.
+이 리포트 안에는 반드시 다음이 모두 들어가야 한다.
+
+1. 선택한 주제 관련 핵심 정보
+2. 주제와 직접 연결되는 추천 자료 2~3개
+3. 자료를 어떻게 활용할지
+4. 서론에 무엇을 써야 하는지
+5. 본론을 어떤 논리 흐름으로 구성해야 하는지
+6. 결론에 무엇을 써야 하는지
+7. 학생이 실제로 작성할 때 주의할 점
+
+절대 원칙:
+1. 학생이 그대로 제출할 수 있는 완성문을 쓰지 않는다.
+2. 서론/본론/결론은 완성문이 아니라 "구성 방향, 포함 요소, 전개 순서"로 쓴다.
+3. 본론은 억지로 3개로 고정하지 않는다.
+4. 선택 주제에 맞게 2~5개 정도의 논리적인 본론 항목을 유동적으로 제시한다.
+5. 추천 자료는 내부 DB 자료를 우선 사용한다.
+6. 내부 DB에 없는 자료명, 링크, 저자, 기관명을 지어내지 않는다.
+7. 자료가 부족하면 자료명 대신 검색 키워드를 제시한다.
+8. 학생 수준은 고등학생이며, 선택 과목과 수행평가 안내문 조건을 최우선 반영한다.
+9. 출력은 반드시 "하나의 통합 설계 리포트" 형식으로 한다.
+10. 자료 추천과 구조 설계를 분리하지 말고, 하나의 자연스러운 리포트 안에 통합한다.
 
 [홈페이지 위닝 수행 자료 DB]
 ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 
-절대 원칙:
-1. 자료 추천은 학교 유형이 아니라 실제 선택 과목명을 기준으로 한다.
-2. 과목명이 "과학 / 생물의 유전"처럼 입력되면 앞의 "과학"은 교과군, 뒤의 "생물의 유전"은 실제 과목명으로 본다.
-3. 학교 유형이 자율형 사립고 또는 특수목적고이고 선택 과목이 전문교과라면, 자료 수준은 높이되 고등학생 수행평가에서 실제 활용 가능한 방식으로 낮춰 설명한다.
-4. 위닝 수행 자료 DB에 있는 검증 자료를 우선 사용한다.
-5. 내부 DB에 없는 자료명, 저자, 기관명, 링크를 지어내지 않는다.
-6. 자료가 부족하면 자료명 대신 검색 키워드를 제시한다.
-7. 링크가 내부 데이터에 없으면 링크 항목은 쓰지 않는다.
-8. Google Search를 사용하지 않았으므로 최신성 확인이 필요한 내용은 "확인 필요"라고 표시한다.
-9. 학생이 그대로 제출 가능한 완성문을 작성하지 않는다.
-10. 서론·본론·결론은 완성문이 아니라 "작성 방향, 포함할 내용, 전개 순서, 주의점" 중심으로 제시한다.
-11. 학생의 진로와 연결하되 억지 연결은 피한다.
-12. 수행평가 안내문 조건이 있으면 그것을 최우선으로 반영한다.
-13. 자료 추천과 설계 리포트는 반드시 분리해서 출력한다.
-14. 본론을 의미 없이 3개로 고정하지 않는다. 선택 주제와 수행평가 조건에 맞춰 필요한 만큼 2~5개의 본론 항목으로 유동 구성한다.
-15. 본론 항목명은 "본론 1, 본론 2"처럼 기계적으로 끝내지 말고, 각 항목의 역할이 드러나게 작성한다.
-
-반드시 아래 출력 형식을 지켜라.
-
-[자료 추천]
-
-자료 1
-1. 추천 구분: 선배 검증 자료 / 검색 키워드 / 자료 유형 중 하나
-2. 제목 또는 검색 키워드:
-3. 출처 정보:
-4. 유형:
-5. 핵심 내용:
-6. 현재 주제와의 연결:
-7. 수행평가 활용법:
-8. 진로 연계:
-9. 주의:
-
-자료 2
-1. 추천 구분:
-2. 제목 또는 검색 키워드:
-3. 출처 정보:
-4. 유형:
-5. 핵심 내용:
-6. 현재 주제와의 연결:
-7. 수행평가 활용법:
-8. 진로 연계:
-9. 주의:
-
-자료 3
-1. 추천 구분:
-2. 제목 또는 검색 키워드:
-3. 출처 정보:
-4. 유형:
-5. 핵심 내용:
-6. 현재 주제와의 연결:
-7. 수행평가 활용법:
-8. 진로 연계:
-9. 주의:
-
-[수행평가 설계 리포트]
+반드시 아래 형식대로 출력하라.
 
 1. 최종 주제
 - 주제명:
@@ -153,75 +93,72 @@ ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 - 선택 과목과 연결되는 지점:
 - 희망 진로와 연결되는 지점:
 
-2. 탐구 핵심 질문
+2. 추천 자료 및 활용 포인트
+자료 1
+- 자료명 또는 검색 키워드:
+- 출처 정보:
+- 핵심 내용:
+- 이 자료를 보고서에서 활용하는 방법:
+
+자료 2
+- 자료명 또는 검색 키워드:
+- 출처 정보:
+- 핵심 내용:
+- 이 자료를 보고서에서 활용하는 방법:
+
+자료 3
+- 자료명 또는 검색 키워드:
+- 출처 정보:
+- 핵심 내용:
+- 이 자료를 보고서에서 활용하는 방법:
+
+3. 탐구 핵심 질문
 - 핵심 질문 1:
 - 핵심 질문 2:
 - 핵심 질문 3:
-※ 질문은 보고서의 본론 전개가 가능하도록 구체적으로 제시한다.
 
-3. 수행평가 전체 방향
+4. 수행평가 전체 방향
 - 보고서의 중심 주장:
-- 단순 조사와 구별되는 분석 포인트:
+- 분석 포인트:
 - 교과 개념을 드러내는 방식:
-- 자료를 활용하는 방식:
-- 학생 개인의 해석이 들어가야 하는 부분:
+- 학생의 해석이 꼭 들어가야 하는 부분:
 
-4. 서론 작성 방향
+5. 서론 작성 방향
 - 서론의 역할:
 - 반드시 포함할 내용:
 - 주제 선정 동기 구성 방식:
-- 수행평가 안내문 조건과 연결할 부분:
+- 도입부에서 다루면 좋은 문제의식:
 - 피해야 할 점:
-- 학생이 직접 작성할 때 사용할 수 있는 표현 방향:
-※ 완성 문장을 쓰지 말고, 어떤 흐름으로 써야 하는지만 제시한다.
 
-5. 본론 구성 방향
-※ 아래 본론 항목은 선택 주제에 맞춰 필요한 만큼만 구성한다. 반드시 3개로 고정하지 않는다.
+6. 본론 구성 방향
+※ 선택 주제에 맞게 필요한 만큼 유동적으로 구성한다.
 
-본론 항목 A. [항목 역할이 드러나는 제목]
+본론 항목 A. [역할이 드러나는 제목]
 - 중심 내용:
 - 연결할 교과 개념:
-- 사용할 자료 또는 사례:
-- 분석 순서:
-- 학생이 직접 해석해야 할 부분:
+- 사용할 자료:
+- 전개 순서:
+- 학생이 직접 해석해야 하는 부분:
 - 피해야 할 점:
 
-본론 항목 B. [항목 역할이 드러나는 제목]
+본론 항목 B. [역할이 드러나는 제목]
 - 중심 내용:
 - 연결할 교과 개념:
-- 사용할 자료 또는 사례:
-- 분석 순서:
-- 학생이 직접 해석해야 할 부분:
+- 사용할 자료:
+- 전개 순서:
+- 학생이 직접 해석해야 하는 부분:
 - 피해야 할 점:
 
-필요한 경우에만 본론 항목 C, D, E를 추가한다.
-불필요하면 추가하지 않는다.
+필요하면 본론 항목 C, D, E까지 추가한다.
 
-6. 결론 작성 방향
+7. 결론 작성 방향
 - 결론의 역할:
 - 탐구 결과 정리 방식:
 - 새롭게 알게 된 점:
 - 진로 또는 후속 탐구와 연결하는 방식:
 - 피해야 할 점:
-- 학생이 직접 작성할 때 사용할 수 있는 표현 방향:
-※ 완성 문장을 쓰지 말고, 결론의 논리 흐름만 제시한다.
 
-7. 자료 활용 계획
-- 자료 1 활용 위치:
-- 자료 2 활용 위치:
-- 자료 3 활용 위치:
-- 자료를 그대로 베끼지 않고 재구성하는 방법:
-- 출처 확인이 필요한 부분:
-
-8. 평가 기준 대응 전략
-- 과목 적합성:
-- 자료 신뢰성:
-- 분석력:
-- 진로 연계성:
-- 자기 생각:
-- 형식 완성도:
-
-9. 학생 작성 체크리스트
+8. 학생 작성 체크리스트
 - 체크 1:
 - 체크 2:
 - 체크 3:
@@ -247,24 +184,20 @@ ${selected_topic_detail || '없음'}
 ${session.assessment_info || '안내문 정보 없음'}
 
 작업:
-1. 선택 주제와 직접 관련 있는 자료를 최대 3개 추천한다.
-2. 내부 DB에 적합한 자료가 있으면 우선 사용한다.
-3. 내부 DB에 자료가 부족하면 구체적인 검색 키워드로 보완한다.
-4. 없는 링크, 없는 자료명, 확인되지 않은 출처는 만들지 않는다.
-5. 자료 추천 뒤에는 반드시 수행평가 설계 리포트를 작성한다.
-6. 설계 리포트에는 서론, 선택 주제에 맞춘 유동적인 본론 구성, 결론 작성 방향이 들어가야 한다.
-7. 본론은 무조건 3개로 나누지 말고 선택 주제의 논리 흐름에 맞게 필요한 만큼만 구성한다.
-8. 학생이 그대로 제출 가능한 완성문은 쓰지 않는다.
-9. 학생이 직접 작성할 수 있도록 구조, 흐름, 포함 요소, 피해야 할 점 중심으로 안내한다.
+- 선택 주제를 기준으로 통합 수행평가 설계 리포트를 작성하라.
+- 추천 자료, 주제 관련 정보, 서론/본론/결론 구조를 모두 하나의 리포트에 넣어라.
+- 학생이 직접 작성할 수 있도록 구체적이고 실용적으로 작성하라.
 `.trim();
 
-    const result = await callText(system, userMsg);
-    const { resources, planReport } = splitCombinedResult(result);
+    const result = await callText(system, userMsg, {
+      maxOutputTokens: 3800
+    });
 
     const updated = await updateSession(session_id, {
       selected_topic,
       selected_topic_detail,
-      resources
+      resources: '',
+      plan_report: result
     });
 
     await dbSaveConversation(updated);
@@ -278,23 +211,25 @@ ${session.assessment_info || '안내문 정보 없음'}
       subject,
       career,
       selected_topic,
-      report_content: planReport,
+      report_content: result,
       meta: {
-        selected_topic_detail,
-        resources
+        selected_topic_detail
       }
     });
 
     return res.status(200).json({
       status: 'success',
-      resources,
-      plan_report: planReport,
+      resources: '',
+      plan_report: result,
       report_id: savedReport?.id || null,
       call_count: usage.count,
       call_limit: usage.limit
     });
   } catch (error) {
     console.error('find resources error:', error);
-    return res.status(500).json({ detail: '자료 추천 및 설계 리포트 생성 중 오류가 발생했습니다.' });
+    return res.status(500).json({
+      detail: '설계 리포트 생성 중 오류가 발생했습니다.',
+      error_message: error?.message || String(error)
+    });
   }
 }
