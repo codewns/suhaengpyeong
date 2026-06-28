@@ -38,8 +38,7 @@ export default async function handler(req, res) {
       });
     }
 
-    onst session = await getSession(session_id);
-
+    const session = await getSession(session_id);
 if (!session?.student_code) {
   return res.status(401).json({ detail: '로그인이 필요합니다.' });
 }
