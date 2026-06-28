@@ -1,13 +1,29 @@
 export const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 
 // 수행평가 프로그램 전용 Supabase: 학생, 세션, 대화, 리포트, 이미지 저장
-export const SUPABASE_URL = process.env.SUPABASE_URL;
-export const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-export const SUPABASE_IMAGE_BUCKET = process.env.SUPABASE_IMAGE_BUCKET || 'assessment-images';
+export const SUPABASE_URL =
+  process.env.SUPABASE_URL ||
+  process.env.WINNING_SUPABASE_URL;
+
+export const SUPABASE_SERVICE_ROLE_KEY =
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_KEY ||
+  process.env.WINNING_SUPABASE_KEY;
+
+export const SUPABASE_IMAGE_BUCKET =
+  process.env.SUPABASE_IMAGE_BUCKET || 'assessment-images';
 
 // 기존 홈페이지 Supabase: 위닝 수행 주제 DB / 위닝 수행 자료 DB 저장소
-export const WINNING_SUPABASE_URL = process.env.WINNING_SUPABASE_URL;
-export const WINNING_SUPABASE_SERVICE_ROLE_KEY = process.env.WINNING_SUPABASE_SERVICE_ROLE_KEY;
+export const WINNING_SUPABASE_URL =
+  process.env.WINNING_SUPABASE_URL ||
+  process.env.SUPABASE_URL;
+
+export const WINNING_SUPABASE_SERVICE_ROLE_KEY =
+  process.env.WINNING_SUPABASE_KEY ||
+  process.env.WINNING_SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_SERVICE_ROLE_KEY ||
+  process.env.SUPABASE_KEY;
+
 export const WINNING_KNOWLEDGE_TABLE =
   process.env.WINNING_KNOWLEDGE_TABLE || 'winning_assessment_knowledge_items';
 
