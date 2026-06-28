@@ -177,29 +177,100 @@
   .eval-type-tab { flex:1; padding:10px; border:1px solid var(--border); border-radius:10px; font-size:13px; cursor:pointer; background:#fff; color:var(--text-sub); font-family:'Noto Sans KR',sans-serif; font-weight:500; transition:all 0.2s; text-align:center; }
   .eval-type-tab.active { background:var(--primary); color:#fff; border-color:var(--primary); }
 
-  .report-modal { width:920px; max-width:94vw; max-height:88vh; }
-  .report-layout { display:grid; grid-template-columns:1fr 220px; gap:18px; align-items:start; }
-  .report-paper { background:#fff; border:1px solid var(--border); border-radius:16px; padding:24px; box-shadow:var(--shadow); }
-  .report-paper-title { font-size:20px; font-weight:900; color:var(--text); margin-bottom:8px; line-height:1.4; }
-  .report-paper-meta { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:18px; }
-  .report-actions { position:sticky; top:0; display:flex; flex-direction:column; gap:10px; }
-  .report-action-card { border:1px solid var(--border); border-radius:16px; padding:14px; background:#fafbff; }
-  .report-action-btn { width:100%; padding:12px 14px; border:none; border-radius:12px; background:var(--primary); color:#fff; font-size:13px; font-weight:800; font-family:'Noto Sans KR',sans-serif; cursor:pointer; }
-  .report-action-btn.secondary { background:#fff; color:var(--text); border:1px solid var(--border); }
-  .report-text { white-space:pre-wrap; font-size:13px; line-height:1.85; color:var(--text); }
-  .writing-form { border:1px solid var(--border); border-radius:16px; background:#fff; padding:16px; margin-top:12px; }
-  .writing-form-title { font-size:14px; font-weight:800; margin-bottom:10px; }
-  .writing-field { margin-bottom:12px; }
-  .writing-label { font-size:12px; font-weight:800; color:var(--primary); margin-bottom:6px; display:block; }
-  .writing-input, .writing-textarea { width:100%; padding:11px 13px; border:1px solid var(--border); border-radius:12px; font-size:13px; font-family:'Noto Sans KR',sans-serif; outline:none; line-height:1.7; background:#fafbff; }
-  .writing-textarea { min-height:110px; resize:vertical; }
-  .writing-textarea.body { min-height:180px; }
-  .report-list-item { border:1px solid var(--border); border-radius:14px; padding:15px; margin-bottom:12px; cursor:pointer; transition:all 0.2s; background:#fff; }
-  .report-list-item:hover { border-color:var(--primary); box-shadow:0 0 0 3px rgba(79,99,255,0.08); }
-  .report-list-title { font-size:14px; font-weight:800; margin-bottom:5px; line-height:1.45; }
-  .report-list-meta { font-size:11px; color:var(--text-sub); display:flex; flex-wrap:wrap; gap:6px; }
-  @media (max-width:900px) { .report-layout { grid-template-columns:1fr; } .report-actions { position:relative; } }
+  .report-modal {
+  width:1040px;
+  max-width:96vw;
+  max-height:90vh;
+}
 
+.report-layout {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 230px;
+  gap:18px;
+  align-items:start;
+}
+
+.report-paper {
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:24px;
+  box-shadow:var(--shadow);
+}
+
+.report-paper-title {
+  font-size:20px;
+  font-weight:900;
+  color:var(--text);
+  margin-bottom:8px;
+  line-height:1.4;
+}
+
+.report-paper-meta {
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-bottom:18px;
+}
+
+.report-actions {
+  position:sticky;
+  top:0;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.report-action-card {
+  border:1px solid var(--border);
+  border-radius:16px;
+  padding:14px;
+  background:#fafbff;
+}
+
+.report-action-btn {
+  width:100%;
+  padding:12px 14px;
+  border:none;
+  border-radius:12px;
+  background:var(--primary);
+  color:#fff;
+  font-size:13px;
+  font-weight:800;
+  font-family:'Noto Sans KR',sans-serif;
+  cursor:pointer;
+}
+
+.report-action-btn.secondary {
+  background:#fff;
+  color:var(--text);
+  border:1px solid var(--border);
+}
+
+.report-text {
+  white-space:pre-wrap;
+  font-size:13px;
+  line-height:1.85;
+  color:var(--text);
+  word-break:keep-all;
+}
+
+.report-help {
+  font-size:11px;
+  color:var(--text-sub);
+  line-height:1.55;
+  margin-top:10px;
+}
+
+@media (max-width:900px) {
+  .report-layout {
+    grid-template-columns:1fr;
+  }
+
+  .report-actions {
+    position:relative;
+  }
+}
 </style>
 </head>
 <body>
@@ -1665,6 +1736,8 @@ function showEvaluationReportModal(topic, reportText, reportId=null) {
 
 function buildReportHtml({title, type, content, reportId}) {
   const typeLabel = type === 'evaluation' ? '평가 리포트' : '설계 리포트';
+  const safeContent = esc(stripMarkdown(content || '')).replace(/\n/g,'<br>');
+
   return `
     <div class="report-layout">
       <div class="report-paper" id="activeReportPaper">
@@ -1675,14 +1748,24 @@ function buildReportHtml({title, type, content, reportId}) {
           <span class="meta-tag tag-career">${esc(studentInfo?.career || '')}</span>
           <span class="meta-tag tag-subject">${typeLabel}</span>
         </div>
-        <div class="report-text">${esc(stripMarkdown(content)).replace(/\n/g,'<br>')}</div>
+        <div class="report-text">${safeContent}</div>
       </div>
+
       <aside class="report-actions">
         <div class="report-action-card">
           <div style="font-size:13px;font-weight:800;margin-bottom:8px;">리포트 관리</div>
-          <div style="font-size:12px;color:var(--text-sub);line-height:1.6;margin-bottom:12px;">현재 리포트는 서버에 저장되어 있으며, 목록에서 다시 열 수 있습니다.</div>
-          <button class="report-action-btn" onclick="downloadCurrentReportPdf('${escJs(title)}')">PDF로 다운로드</button>
-          <button class="report-action-btn secondary" style="margin-top:8px;" onclick="openReportListModal()">저장 리포트 목록</button>
+          <div style="font-size:12px;color:var(--text-sub);line-height:1.6;margin-bottom:12px;">
+            리포트는 별도 팝업창으로 열리며, 아래 버튼으로 인쇄 창을 열어 PDF로 저장할 수 있습니다.
+          </div>
+          <button class="report-action-btn" onclick="downloadCurrentReportPdf('${escJs(title)}')">
+            PDF로 저장 / 인쇄
+          </button>
+          <button class="report-action-btn secondary" style="margin-top:8px;" onclick="openReportListModal()">
+            저장 리포트 목록
+          </button>
+          <div class="report-help">
+            버튼을 누른 뒤 인쇄 대상에서 “PDF로 저장”을 선택하면 파일로 저장됩니다.
+          </div>
         </div>
       </aside>
     </div>`;
@@ -1695,20 +1778,134 @@ function closeReportModal() {
 function downloadCurrentReportPdf(title='수행평가 리포트') {
   const paper = document.getElementById('activeReportPaper');
   if(!paper) return;
-  const win = window.open('', '_blank');
-  const html = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${esc(title)}</title>
-    <style>
-      @page { size: A4; margin: 18mm; }
-      body { font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif; color:#1a1f3c; }
-      .report-paper-title { font-size:22px; font-weight:900; margin-bottom:12px; }
-      .report-paper-meta { margin-bottom:18px; display:flex; gap:8px; flex-wrap:wrap; }
-      .meta-tag { border:1px solid #d8def2; border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; }
-      .report-text { font-size:12.5px; line-height:1.85; }
-    </style></head><body>${paper.innerHTML}</body></html>`;
+
+  const printable = paper.cloneNode(true);
+  const win = window.open('', '_blank', 'width=900,height=1000');
+
+  if(!win) {
+    showToast('팝업이 차단되었습니다. 브라우저 팝업 허용 후 다시 눌러주세요.');
+    return;
+  }
+
+  const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>${esc(title)}</title>
+<style>
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
+
+  * {
+    box-sizing:border-box;
+  }
+
+  body {
+    margin:0;
+    background:#fff;
+    font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif;
+    color:#1a1f3c;
+  }
+
+  .print-toolbar {
+    position:sticky;
+    top:0;
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+    padding:12px 16px;
+    background:#f7f8ff;
+    border-bottom:1px solid #e8ecf8;
+  }
+
+  .print-btn {
+    padding:10px 14px;
+    border:none;
+    border-radius:10px;
+    background:#4f63ff;
+    color:#fff;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+  }
+
+  .print-btn.secondary {
+    background:#fff;
+    color:#1a1f3c;
+    border:1px solid #d8def2;
+  }
+
+  .report-paper {
+    width:100%;
+    max-width:760px;
+    margin:0 auto;
+    padding:28px 10px;
+  }
+
+  .report-paper-title {
+    font-size:22px;
+    font-weight:900;
+    margin-bottom:12px;
+    line-height:1.4;
+  }
+
+  .report-paper-meta {
+    margin-bottom:18px;
+    padding-bottom:12px;
+    border-bottom:1px solid #d8def2;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+
+  .meta-tag {
+    border:1px solid #d8def2;
+    border-radius:999px;
+    padding:4px 10px;
+    font-size:11px;
+    font-weight:700;
+  }
+
+  .report-text {
+    font-size:12.5px;
+    line-height:1.9;
+    white-space:pre-wrap;
+    word-break:keep-all;
+  }
+
+  @media print {
+    .print-toolbar {
+      display:none;
+    }
+
+    .report-paper {
+      max-width:none;
+      padding:0;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="print-toolbar">
+    <button class="print-btn" onclick="window.print()">PDF로 저장 / 인쇄</button>
+    <button class="print-btn secondary" onclick="window.close()">닫기</button>
+  </div>
+
+  ${printable.outerHTML}
+
+  <script>
+    setTimeout(function(){
+      window.print();
+    }, 400);
+  <\/script>
+</body>
+</html>`;
+
   win.document.write(html);
   win.document.close();
   win.focus();
-  setTimeout(() => win.print(), 350);
 }
 
 function showEvalInput() {
