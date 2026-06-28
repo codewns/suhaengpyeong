@@ -27,7 +27,7 @@ export const WINNING_SUPABASE_SERVICE_ROLE_KEY =
 export const WINNING_KNOWLEDGE_TABLE =
   process.env.WINNING_KNOWLEDGE_TABLE || 'winning_assessment_knowledge_items';
 
-export const MODEL = 'gemini-2.5-flash';
+export const MODEL = 'gemini-2.0-flash-lite-001';
 
 export const CORE_PRINCIPLES = `
 [AI 수행평가 코치 핵심 원칙]
