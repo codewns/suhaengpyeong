@@ -201,11 +201,10 @@ ${selectedSavedSession.assessment_info || '안내문 정보 없음'}
     });
 
     const updated = await updateSession(session_id, {
-      selected_topic,
-      selected_topic_detail,
-      resources: '',
-      plan_report: result
-    });
+  selected_topic,
+  selected_topic_detail,
+  resources: result
+});
 
     await dbSaveConversation(updated);
 
