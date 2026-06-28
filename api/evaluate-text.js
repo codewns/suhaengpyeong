@@ -38,13 +38,14 @@ export default async function handler(req, res) {
       });
     }
 
-    const session = await getSession(session_id);
-    const schoolType = session.school_type || '일반고';
+    onst session = await getSession(session_id);
 
-    if (!session?.student_code) {
-      return res.status(401).json({ detail: '로그인이 필요합니다.' });
-    }
+if (!session?.student_code) {
+  return res.status(401).json({ detail: '로그인이 필요합니다.' });
+}
 
+const schoolType = session.school_type || '일반고';
+    
     const usage = await incrementCallCount(session.student_code);
 
     if (!usage.allowed) {
