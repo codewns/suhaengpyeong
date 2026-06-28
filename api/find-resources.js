@@ -8,6 +8,16 @@ import {
 import { callText } from './_lib/gemini.js';
 import { saveAssessmentReport } from './_lib/reports.js';
 
+function ensureConclusionSection(text = '') {
+  const result = String(text || '').trim();
+
+  if (/결론\s*(작성|구성)\s*방향/.test(result)) {
+    return result;
+  }
+
+  return `${result}\n\n7. 결론 구성 방향\n- 결론의 역할: 본론에서 분석한 내용을 단순 반복하지 말고, 선택 주제를 통해 확인한 핵심 의미를 정리한다.\n- 탐구 결과 정리 방식: 사용한 자료와 교과 개념을 바탕으로 무엇을 알게 되었는지 2~3가지로 압축한다.\n- 새롭게 알게 된 점: 기존에 막연히 알고 있던 내용과 탐구 후 달라진 이해를 비교한다.\n- 진로 또는 후속 탐구와 연결하는 방식: 희망 진로와 연결하되 과장하지 말고, 이후 더 확인해 볼 질문을 제시한다.\n- 피해야 할 점: 느낀 점만 길게 쓰거나, 본론에 없던 새로운 주장과 자료를 결론에서 갑자기 추가하지 않는다.`.trim();
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ detail: 'Method not allowed' });
@@ -58,7 +68,7 @@ export default async function handler(req, res) {
       assessmentInfo: selectedSavedSession.assessment_info || '',
       purpose: 'resource',
       maxItems: 8,
-      maxChars: 6500,
+      maxChars: 8000,
       includeOtherSubjects: false
     });
 
@@ -67,27 +77,20 @@ export default async function handler(req, res) {
 
 목표:
 학생이 선택한 주제에 대해 "통합 수행평가 설계 리포트"를 작성한다.
-이 리포트 안에는 반드시 다음이 모두 들어가야 한다.
 
-1. 선택한 주제 관련 핵심 정보
-2. 주제와 직접 연결되는 추천 자료 2~3개
-3. 자료를 어떻게 활용할지
-4. 서론에 무엇을 써야 하는지
-5. 본론을 어떤 논리 흐름으로 구성해야 하는지
-6. 결론에 무엇을 써야 하는지
-7. 학생이 실제로 작성할 때 주의할 점
-
-절대 원칙:
-1. 학생이 그대로 제출할 수 있는 완성문을 쓰지 않는다.
-2. 서론/본론/결론은 완성문이 아니라 "구성 방향, 포함 요소, 전개 순서"로 쓴다.
-3. 본론은 억지로 3개로 고정하지 않는다.
-4. 선택 주제에 맞게 2~5개 정도의 논리적인 본론 항목을 유동적으로 제시한다.
-5. 추천 자료는 내부 DB 자료를 우선 사용한다.
-6. 내부 DB에 없는 자료명, 링크, 저자, 기관명을 지어내지 않는다.
-7. 자료가 부족하면 자료명 대신 검색 키워드를 제시한다.
-8. 학생 수준은 고등학생이며, 선택 과목과 수행평가 안내문 조건을 최우선 반영한다.
-9. 출력은 반드시 "하나의 통합 설계 리포트" 형식으로 한다.
-10. 자료 추천과 구조 설계를 분리하지 말고, 하나의 자연스러운 리포트 안에 통합한다.
+중요:
+1. 반드시 아래 1번부터 8번까지 모든 번호 항목을 빠짐없이 출력한다.
+2. 특히 "7. 결론 구성 방향"은 절대 생략하지 않는다.
+3. 전체 분량은 너무 길게 쓰지 말고, 핵심만 압축한다.
+4. 본론 항목은 2~3개까지만 제시한다.
+5. 서론/본론/결론은 완성문이 아니라 "구성 방향, 포함 요소, 전개 순서"로 쓴다.
+6. 학생이 그대로 제출할 수 있는 완성문을 쓰지 않는다.
+7. 추천 자료는 아래 위닝 수행 자료 DB에서 불러온 자료를 우선 사용한다.
+8. 위닝 수행 자료 DB에 "출처 링크"가 있으면 반드시 그대로 출력한다.
+9. 출처 링크가 없으면 "출처 링크: 확인 필요"라고 쓴다.
+10. DB에 없는 자료명, 링크, 저자, 기관명을 지어내지 않는다.
+11. 자료가 부족하면 자료명 대신 검색 키워드를 제시한다.
+12. 출력에 *, **, ## 같은 마크다운 기호를 쓰지 않는다.
 
 [홈페이지 위닝 수행 자료 DB]
 ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
@@ -104,18 +107,21 @@ ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 자료 1
 - 자료명 또는 검색 키워드:
 - 출처 정보:
+- 출처 링크:
 - 핵심 내용:
 - 이 자료를 보고서에서 활용하는 방법:
 
 자료 2
 - 자료명 또는 검색 키워드:
 - 출처 정보:
+- 출처 링크:
 - 핵심 내용:
 - 이 자료를 보고서에서 활용하는 방법:
 
 자료 3
 - 자료명 또는 검색 키워드:
 - 출처 정보:
+- 출처 링크:
 - 핵심 내용:
 - 이 자료를 보고서에서 활용하는 방법:
 
@@ -130,7 +136,7 @@ ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 - 교과 개념을 드러내는 방식:
 - 학생의 해석이 꼭 들어가야 하는 부분:
 
-5. 서론 작성 방향
+5. 서론 구성 방향
 - 서론의 역할:
 - 반드시 포함할 내용:
 - 주제 선정 동기 구성 방식:
@@ -138,8 +144,6 @@ ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 - 피해야 할 점:
 
 6. 본론 구성 방향
-※ 선택 주제에 맞게 필요한 만큼 유동적으로 구성한다.
-
 본론 항목 A. [역할이 드러나는 제목]
 - 중심 내용:
 - 연결할 교과 개념:
@@ -156,9 +160,9 @@ ${dynamicResourceKnowledge || '사용 가능한 내부 자료 없음'}
 - 학생이 직접 해석해야 하는 부분:
 - 피해야 할 점:
 
-필요하면 본론 항목 C, D, E까지 추가한다.
+필요할 때만 본론 항목 C를 추가한다.
 
-7. 결론 작성 방향
+7. 결론 구성 방향
 - 결론의 역할:
 - 탐구 결과 정리 방식:
 - 새롭게 알게 된 점:
@@ -192,19 +196,22 @@ ${selectedSavedSession.assessment_info || '안내문 정보 없음'}
 
 작업:
 - 선택 주제를 기준으로 통합 수행평가 설계 리포트를 작성하라.
-- 추천 자료, 주제 관련 정보, 서론/본론/결론 구조를 모두 하나의 리포트에 넣어라.
-- 학생이 직접 작성할 수 있도록 구체적이고 실용적으로 작성하라.
+- 추천 자료, 출처 링크, 주제 관련 정보, 서론/본론/결론 구조를 모두 하나의 리포트에 넣어라.
+- 결론 구성 방향을 반드시 포함하라.
 `.trim();
 
-    const result = await callText(system, userMsg, {
-      maxOutputTokens: 3800
+    const rawResult = await callText(system, userMsg, {
+      maxOutputTokens: 5200,
+      temperature: 0.25
     });
 
+    const result = ensureConclusionSection(rawResult);
+
     const updated = await updateSession(session_id, {
-  selected_topic,
-  selected_topic_detail,
-  resources: result
-});
+      selected_topic,
+      selected_topic_detail,
+      resources: result
+    });
 
     await dbSaveConversation(updated);
 
@@ -225,7 +232,7 @@ ${selectedSavedSession.assessment_info || '안내문 정보 없음'}
 
     return res.status(200).json({
       status: 'success',
-      resources: '',
+      resources: result,
       plan_report: result,
       report_id: savedReport?.id || null,
       call_count: usage.count,
