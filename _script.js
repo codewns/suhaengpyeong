@@ -1,11 +1,26 @@
 const API = '/api';
 
-// 반드시 Supabase Project Settings → API에서 가져온 값을 입력하세요.
-// SERVICE_ROLE_KEY가 아니라 anon public key만 여기에 넣습니다.
+/*
+  수행평가 Supabase
+  - 이미지 Storage 업로드용
+  - 기존 수행평가 프로젝트 URL / anon key 유지
+*/
 const SUPABASE_URL = 'https://orwngbyiylchpzufwvej.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yd25nYnlpeWxjaHB6dWZ3dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzkyMzIsImV4cCI6MjA4ODQ1NTIzMn0.LnKlvHTo9Q_teQd-MTNpdVnGcTT27szXcO-GzGxwfmg';
+
+/*
+  메인 Supabase
+  - 이메일/비밀번호 로그인용
+  - 절대 service_role key 넣지 말 것
+  - anon public key만 넣기
+*/
+const WINNING_SUPABASE_URL = 'https://ucjlcvqvinspmrasvsug.supabase.co';
+const WINNING_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjamxjdnF2aW5zcG1yYXN2c3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjE3OTUsImV4cCI6MjA5NTUzNzc5NX0.Mz7D_gxS2tBWJuVrYYk4IN9vFG5RnXjNHCHBfi6U2bU';
+
 const STORAGE_BUCKET = 'assessment-images';
 
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const mainSb = supabase.createClient(WINNING_SUPABASE_URL, WINNING_SUPABASE_ANON_KEY);
 const CURRICULUM_2022 = {
   '고1': {
     '1학기': {
@@ -192,6 +207,7 @@ let selectedTopic = null;
 let assessmentInfo = null;
 let studentName = null;
 let studentCode = null;
+let mainId = null;
 let prevSessionData = null;
 let latestPlanReport = null;
 let latestPlanReportId = null;
@@ -203,29 +219,86 @@ let pendingImages = [];
 // 로그인
 // ───────────────────────────────────────
 async function doLogin() {
-  const name = document.getElementById('loginName').value.trim();
-  const code = document.getElementById('loginCode').value.trim().toUpperCase();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value.trim();
   const errEl = document.getElementById('loginError');
-  if(!name || !code) { errEl.textContent='이름과 코드를 모두 입력해주세요.'; errEl.style.display='block'; return; }
-  errEl.style.display='none';
   const btn = document.querySelector('#loginOverlay button');
-  btn.textContent='확인 중...'; btn.disabled=true;
+
+  if (!email || !password) {
+    errEl.textContent = '이메일과 비밀번호를 모두 입력해주세요.';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  errEl.style.display = 'none';
+  btn.textContent = '확인 중...';
+  btn.disabled = true;
+
   try {
-    const res = await fetch(`${API}/login`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({name,code}) });
+    const { data: authData, error: authError } = await mainSb.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (authError || !authData?.session?.access_token) {
+      errEl.textContent = '이메일 또는 비밀번호를 확인해주세요.';
+      errEl.style.display = 'block';
+      btn.textContent = '시작하기 →';
+      btn.disabled = false;
+      return;
+    }
+
+    const token = authData.session.access_token;
+
+    const res = await fetch(`${API}/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({})
+    });
+
     const data = await res.json();
-    if(!res.ok) { errEl.textContent=data.detail||'로그인 실패'; errEl.style.display='block'; btn.textContent='시작하기 →'; btn.disabled=false; return; }
-    sessionId = data.session_id; studentName = data.name; studentCode = data.code;
-    document.getElementById('headerBadge').textContent = data.name;
+
+    if (!res.ok) {
+      await mainSb.auth.signOut();
+
+      errEl.textContent = data.detail || '결제 후 시도해주세요!';
+      errEl.style.display = 'block';
+      btn.textContent = '시작하기 →';
+      btn.disabled = false;
+      return;
+    }
+
+    sessionId = data.session_id;
+    studentName = data.name || authData.user?.email || '';
+    mainId = data.main_id || authData.user?.id || '';
+    studentCode = mainId;
+
+    document.getElementById('headerBadge').textContent = studentName;
     document.getElementById('loginOverlay').style.display = 'none';
+
     updateCallUsage(data.call_count || 0, data.call_limit || 0);
-    if(data.previous && (data.previous.topics || data.previous.resources || data.previous.evaluation)) {
+
+    const hasPreviousWork = data.previous && (
+      data.previous.selected_topic ||
+      data.previous.topics ||
+      data.previous.resources ||
+      data.previous.evaluation ||
+      data.previous.assessment_info
+    );
+
+    if (hasPreviousWork) {
       showPreviousHistory(data.previous);
     } else {
-      showWelcome(data.name);
+      showWelcome(studentName);
     }
-  } catch(e) {
-    errEl.textContent='서버 연결 실패. 잠시 후 다시 시도해주세요.'; errEl.style.display='block';
-    btn.textContent='시작하기 →'; btn.disabled=false;
+  } catch (e) {
+    errEl.textContent = e.message || '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+    errEl.style.display = 'block';
+    btn.textContent = '시작하기 →';
+    btn.disabled = false;
   }
 }
 
@@ -562,11 +635,11 @@ async function uploadImageToStorage(file, purpose = 'assessment') {
   }
 
   if (!SUPABASE_URL || SUPABASE_URL.includes('YOUR_SUPABASE_URL')) {
-    throw new Error('index.html의 SUPABASE_URL 값을 실제 Supabase URL로 바꿔주세요.');
+    throw new Error('SUPABASE_URL 값을 실제 수행평가 Supabase URL로 바꿔주세요.');
   }
 
   if (!SUPABASE_ANON_KEY || SUPABASE_ANON_KEY.includes('YOUR_SUPABASE_ANON_PUBLIC_KEY')) {
-    throw new Error('index.html의 SUPABASE_ANON_KEY 값을 실제 anon public key로 바꿔주세요.');
+    throw new Error('SUPABASE_ANON_KEY 값을 실제 수행평가 anon public key로 바꿔주세요.');
   }
 
   const contentType = file.type || 'image/jpeg';
@@ -1534,16 +1607,37 @@ async function openSavedReport(reportId) {
 // ───────────────────────────────────────
 // 유틸
 // ───────────────────────────────────────
-async function apiFetch(url, options={}, timeoutMs=120000) {
+async function apiFetch(url, options = {}, timeoutMs = 120000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
-    const res = await fetch(url, { ...options, signal: controller.signal });
+    const { data: sessionData } = await mainSb.auth.getSession();
+    const token = sessionData?.session?.access_token;
+
+    const headers = {
+      ...(options.headers || {})
+    };
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`;
+    }
+
+    const res = await fetch(url, {
+      ...options,
+      headers,
+      signal: controller.signal
+    });
+
     clearTimeout(timer);
     return res;
-  } catch(e) {
+  } catch (e) {
     clearTimeout(timer);
-    if(e.name==='AbortError') throw new Error('응답 시간이 너무 길어요. 잠시 후 다시 시도해주세요.');
+
+    if (e.name === 'AbortError') {
+      throw new Error('응답 시간이 너무 길어요. 잠시 후 다시 시도해주세요.');
+    }
+
     throw e;
   }
 }
