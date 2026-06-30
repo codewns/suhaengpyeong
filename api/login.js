@@ -15,10 +15,13 @@ export default async function handler(req, res) {
   try {
     const auth = await requireProgramAccess(req, 'suhaeng');
 
-    if (!auth.ok) {
-      return res.status(auth.status).json({ detail: auth.message });
-    }
+console.log('suhaeng login auth result:', auth);
 
+if (!auth.ok) {
+  return res.status(auth.status).json({
+    detail: auth.message || '결제 후 이용해주세요.'
+  });
+}
     const mainId = auth.mainId;
     const fallbackName = auth.user?.user_metadata?.name || auth.user?.email || '';
 
