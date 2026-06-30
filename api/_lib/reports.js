@@ -3,7 +3,7 @@ import { supabaseAdmin } from './supabase.js';
 export async function saveAssessmentReport(report) {
   try {
     const payload = {
-      student_code: report.student_code ? String(report.student_code).toUpperCase() : '',
+      main_id: report.main_id,
       student_name: report.student_name || '',
       report_type: report.report_type || 'plan',
       title: report.title || '',
@@ -35,11 +35,11 @@ export async function saveAssessmentReport(report) {
   }
 }
 
-export async function listAssessmentReports(studentCode, limit = 30) {
+export async function listAssessmentReports(mainId, limit = 30) {
   const { data, error } = await supabaseAdmin
     .from('assessment_reports')
     .select('id, report_type, title, grade, subject, career, selected_topic, created_at')
-    .eq('student_code', String(studentCode).toUpperCase())
+    .eq('main_id', mainId)
     .order('created_at', { ascending: false })
     .limit(limit);
 
@@ -51,11 +51,11 @@ export async function listAssessmentReports(studentCode, limit = 30) {
   return data || [];
 }
 
-export async function getAssessmentReport(studentCode, reportId) {
+export async function getAssessmentReport(mainId, reportId) {
   const { data, error } = await supabaseAdmin
     .from('assessment_reports')
     .select('*')
-    .eq('student_code', String(studentCode).toUpperCase())
+    .eq('main_id', mainId)
     .eq('id', reportId)
     .maybeSingle();
 
@@ -67,12 +67,11 @@ export async function getAssessmentReport(studentCode, reportId) {
   return data;
 }
 
-
-export async function getRecentEvaluationReportSummaries(studentCode, limit = 8) {
+export async function getRecentEvaluationReportSummaries(mainId, limit = 8) {
   const { data, error } = await supabaseAdmin
     .from('assessment_reports')
     .select('id, title, grade, subject, career, selected_topic, report_content, created_at')
-    .eq('student_code', String(studentCode).toUpperCase())
+    .eq('main_id', mainId)
     .eq('report_type', 'evaluation')
     .order('created_at', { ascending: false })
     .limit(limit);
