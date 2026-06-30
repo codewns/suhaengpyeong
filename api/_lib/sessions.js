@@ -45,19 +45,13 @@ export async function updateSession(sessionId, updates) {
 }
 
 export async function dbGetStudent(mainId) {
-  if (!mainId) return null;
-
   const { data, error } = await supabaseAdmin
     .from('students')
-    .select('*')
+    .select('id, main_id, name, call_limit, call_count')
     .eq('main_id', mainId)
     .maybeSingle();
 
-  if (error) {
-    console.error('학생 조회 오류:', error);
-    return null;
-  }
-
+  if (error) throw error;
   return data;
 }
 
