@@ -199,7 +199,6 @@ function getSelectedCurriculum(prefix) {
   };
 }
 
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let sessionId = null;
 let studentInfo = null;
