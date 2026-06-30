@@ -262,14 +262,20 @@ async function doLogin() {
     const data = await res.json();
 
     if (!res.ok) {
-      await mainSb.auth.signOut();
+  await mainSb.auth.signOut();
 
-      errEl.textContent = data.detail || '결제 후 시도해주세요!';
-      errEl.style.display = 'block';
-      btn.textContent = '시작하기 →';
-      btn.disabled = false;
-      return;
-    }
+  const message = data.detail || '결제 후 이용해주세요.';
+
+  if (res.status === 403) {
+    alert(message);
+  }
+
+  errEl.textContent = message;
+  errEl.style.display = 'block';
+  btn.textContent = '시작하기 →';
+  btn.disabled = false;
+  return;
+}
 
     sessionId = data.session_id;
     studentName = data.name || authData.user?.email || '';
