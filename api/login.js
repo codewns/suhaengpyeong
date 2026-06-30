@@ -3,31 +3,46 @@ import { supabaseAdmin } from './_lib/supabase.js';
 import { requireProgramAccess } from './_lib/requireProgramAccess.js';
 import {
   dbGetStudent,
-  dbGetConversation,
   createSession
 } from './_lib/sessions.js';
 
 export default async function handler(req, res) {
+  // 콜드스타트 방지용 ping
+  if (req.method === 'GET') {
+    return res.status(200).json({
+      ok: true,
+      message: 'suhaeng login api warm',
+      time: new Date().toISOString()
+    });
+  }
+
   if (req.method !== 'POST') {
     return res.status(405).json({ detail: 'Method not allowed' });
   }
 
   try {
+    console.time('login-total');
+
+    console.time('access-check');
     const auth = await requireProgramAccess(req, 'suhaeng');
+    console.timeEnd('access-check');
 
-console.log('suhaeng login auth result:', auth);
+    if (!auth.ok) {
+      console.timeEnd('login-total');
+      return res.status(auth.status).json({
+        detail: auth.message || '결제 후 이용해주세요.'
+      });
+    }
 
-if (!auth.ok) {
-  return res.status(auth.status).json({
-    detail: auth.message || '결제 후 이용해주세요.'
-  });
-}
     const mainId = auth.mainId;
     const fallbackName = auth.user?.user_metadata?.name || auth.user?.email || '';
 
+    console.time('student-check');
     let student = await dbGetStudent(mainId);
+    console.timeEnd('student-check');
 
     if (!student) {
+      console.time('student-create');
       const { data: createdStudent, error: createError } = await supabaseAdmin
         .from('students')
         .insert({
@@ -36,60 +51,44 @@ if (!auth.ok) {
           call_limit: 0,
           call_count: 0
         })
-        .select('*')
+        .select('id, main_id, name, call_limit, call_count')
         .single();
+
+      console.timeEnd('student-create');
 
       if (createError) throw createError;
       student = createdStudent;
     }
 
     const cleanName = student.name || fallbackName;
-    const prev = await dbGetConversation(mainId);
     const sessionId = crypto.randomUUID();
 
-    let selectedTopic = '';
-    let selectedTopicDetail = '';
-
-    if (prev?.selected_topic) {
-      if (prev.selected_topic.includes('|||')) {
-        const parts = prev.selected_topic.split('|||');
-        selectedTopic = parts[0] || '';
-        selectedTopicDetail = parts[1] || '';
-      } else {
-        selectedTopic = prev.selected_topic;
-      }
-    }
-
+    console.time('session-create');
     await createSession({
       session_id: sessionId,
       main_id: mainId,
       student_name: cleanName,
-      subject: prev?.subject || '',
-      grade: prev?.grade || '',
-      career: prev?.career || '',
-      assessment_info: prev?.assessment_info || '',
-      selected_topic: selectedTopic,
-      selected_topic_detail: selectedTopicDetail,
-      topics: prev?.topics || '',
-      resources: prev?.resources || '',
-      evaluation: prev?.evaluation || '',
-      school_type: prev?.school_type || '일반고'
+      subject: '',
+      grade: '',
+      career: '',
+      assessment_info: '',
+      selected_topic: '',
+      selected_topic_detail: '',
+      topics: '',
+      resources: '',
+      evaluation: '',
+      school_type: '일반고'
     });
+    console.timeEnd('session-create');
 
-    const previous = prev
-      ? {
-          ...prev,
-          selected_topic: selectedTopic,
-          selected_topic_detail: selectedTopicDetail
-        }
-      : null;
+    console.timeEnd('login-total');
 
     return res.status(200).json({
       status: 'success',
       session_id: sessionId,
       name: cleanName,
       main_id: mainId,
-      previous,
+      previous: null,
       call_limit: student.call_limit || 0,
       call_count: student.call_count || 0,
       message: `안녕하세요, ${cleanName}님! 👋`
