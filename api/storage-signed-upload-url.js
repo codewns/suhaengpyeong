@@ -17,7 +17,7 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
@@ -36,7 +36,7 @@ export default async function handler(req, res) {
       : 'assessment';
 
     const ext = allowedTypes[content_type];
-    const path = `${session.student_code}/${session_id}/${safePurpose}/${crypto.randomUUID()}${ext}`;
+    const path = `${session.main_id}/${session_id}/${safePurpose}/${crypto.randomUUID()}${ext}`;
 
     const { data, error } = await supabaseAdmin
       .storage
@@ -60,3 +60,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ detail: '이미지 업로드 준비 중 오류가 발생했습니다.' });
   }
 }
+
