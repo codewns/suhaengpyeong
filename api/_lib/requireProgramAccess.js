@@ -48,7 +48,7 @@ export async function requireProgramAccess(req, programKey) {
     return {
       ok: false,
       status: 403,
-      message: '결제 후 시도해주세요!',
+      message: '결제 후 이용해주세요.',
     };
   }
 
