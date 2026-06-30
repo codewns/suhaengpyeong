@@ -15,11 +15,11 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
-    const report = await getAssessmentReport(session.student_code, report_id);
+    const report = await getAssessmentReport(session.main_id, report_id);
 
     if (!report) {
       return res.status(404).json({ detail: '리포트를 찾을 수 없습니다.' });
