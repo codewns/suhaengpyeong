@@ -36,7 +36,7 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
 
     await dbSaveConversation(selectedSavedSession);
 
-    const usage = await incrementCallCount(selectedSavedSession.student_code);
+    const usage = await incrementCallCount(selectedSavedSession.main_id);
 
     if (!usage.allowed) {
       return res.status(429).json({
@@ -216,7 +216,7 @@ ${selectedSavedSession.assessment_info || '안내문 정보 없음'}
     await dbSaveConversation(updated);
 
     const savedReport = await saveAssessmentReport({
-      student_code: selectedSavedSession.student_code,
+      main_id: selectedSavedSession.main_id,
       student_name: selectedSavedSession.student_name || '',
       report_type: 'plan',
       title: selected_topic,
