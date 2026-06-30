@@ -39,13 +39,14 @@ export default async function handler(req, res) {
     }
 
     const session = await getSession(session_id);
-if (!session?.student_code) {
-  return res.status(401).json({ detail: '로그인이 필요합니다.' });
-}
 
-const schoolType = session.school_type || '일반고';
-    
-    const usage = await incrementCallCount(session.student_code);
+    if (!session?.main_id) {
+      return res.status(401).json({ detail: '로그인이 필요합니다.' });
+    }
+
+    const schoolType = session.school_type || '일반고';
+
+    const usage = await incrementCallCount(session.main_id);
 
     if (!usage.allowed) {
       return res.status(429).json({
@@ -147,36 +148,36 @@ ${submission_text}
     const result = await callText(system, userMsg);
 
     const updated = await updateSession(session_id, {
-  evaluation: result
-});
+      evaluation: result
+    });
 
-await dbSaveConversation(updated);
+    await dbSaveConversation(updated);
 
-const savedReport = await saveAssessmentReport({
-  student_code: session.student_code,
-  student_name: session.student_name || '',
-  report_type: 'evaluation',
-  title: session.selected_topic || '수행평가 평가 리포트',
-  grade: session.grade || '',
-  subject: session.subject || '',
-  career: session.career || '',
-  selected_topic: session.selected_topic || '',
-  report_content: result,
-  submission_text,
-  evaluation_result: result,
-  meta: {
-    previous_topic: session.previous_topic || '',
-    assessment_info: session.assessment_info || ''
-  }
-});
+    const savedReport = await saveAssessmentReport({
+      main_id: session.main_id,
+      student_name: session.student_name || '',
+      report_type: 'evaluation',
+      title: session.selected_topic || '수행평가 평가 리포트',
+      grade: session.grade || '',
+      subject: session.subject || '',
+      career: session.career || '',
+      selected_topic: session.selected_topic || '',
+      report_content: result,
+      submission_text,
+      evaluation_result: result,
+      meta: {
+        previous_topic: session.previous_topic || '',
+        assessment_info: session.assessment_info || ''
+      }
+    });
 
-return res.status(200).json({
-  status: 'success',
-  evaluation: result,
-  report_id: savedReport?.id || null,
-  call_count: usage.count,
-  call_limit: usage.limit
-});
+    return res.status(200).json({
+      status: 'success',
+      evaluation: result,
+      report_id: savedReport?.id || null,
+      call_count: usage.count,
+      call_limit: usage.limit
+    });
   } catch (error) {
     console.error('evaluate text error:', error);
     return res.status(500).json({ detail: '평가 중 오류가 발생했습니다.' });
