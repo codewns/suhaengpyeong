@@ -38,14 +38,14 @@ export default async function handler(req, res) {
 
   try {
     const {
-  session_id,
-  image_path,
-  mime_type,
-  subject,
-  career,
-  grade,
-  school_type
-} = req.body || {};
+      session_id,
+      image_path,
+      mime_type,
+      subject,
+      career,
+      grade,
+      school_type
+    } = req.body || {};
 
     if (!session_id || !image_path) {
       return res.status(400).json({ detail: 'session_id와 image_path가 필요합니다.' });
@@ -53,11 +53,11 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
-    const usage = await incrementCallCount(session.student_code);
+    const usage = await incrementCallCount(session.main_id);
 
     if (!usage.allowed) {
       return res.status(429).json({
@@ -97,7 +97,6 @@ ${CORE_PRINCIPLES}
 ...
 질문 목록이 없으면 "질문 목록 없음"으로 표시하세요.
 
-
 [자료/도서/영상 목록 - 절대 누락 금지]
 안내문에 학생이 선택해야 할 자료/도서/영상 목록이 있으면 전부 추출하세요.
 없으면 "없음"으로 표시하세요.
@@ -121,6 +120,7 @@ ${CORE_PRINCIPLES}
       subject: subject || session.subject || '',
       career: career || session.career || '',
       grade: grade || session.grade || '고등학생',
+      school_type: school_type || session.school_type || '일반고',
       assessment_info: newAssessmentInfo
     });
 
@@ -139,3 +139,4 @@ ${CORE_PRINCIPLES}
     return res.status(500).json({ detail: '안내문 분석 중 오류가 발생했습니다.' });
   }
 }
+
