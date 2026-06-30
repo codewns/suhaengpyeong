@@ -44,11 +44,13 @@ export async function updateSession(sessionId, updates) {
   return data;
 }
 
-export async function dbGetStudent(code) {
+export async function dbGetStudent(mainId) {
+  if (!mainId) return null;
+
   const { data, error } = await supabaseAdmin
     .from('students')
     .select('*')
-    .eq('code', String(code).toUpperCase())
+    .eq('main_id', mainId)
     .maybeSingle();
 
   if (error) {
@@ -59,11 +61,13 @@ export async function dbGetStudent(code) {
   return data;
 }
 
-export async function dbGetConversation(code) {
+export async function dbGetConversation(mainId) {
+  if (!mainId) return null;
+
   const { data, error } = await supabaseAdmin
     .from('conversations')
     .select('*')
-    .eq('student_code', String(code).toUpperCase())
+    .eq('main_id', mainId)
     .order('updated_at', { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -77,7 +81,7 @@ export async function dbGetConversation(code) {
 }
 
 export async function dbSaveConversation(session) {
-  if (!session?.student_code) return;
+  if (!session?.main_id) return;
 
   const now = new Date().toISOString();
 
@@ -86,7 +90,7 @@ export async function dbSaveConversation(session) {
     : session.selected_topic || '';
 
   const dataToSave = {
-    student_code: session.student_code,
+    main_id: session.main_id,
     student_name: session.student_name || '',
     subject: session.subject || '',
     grade: session.grade || '',
@@ -99,13 +103,13 @@ export async function dbSaveConversation(session) {
     updated_at: now
   };
 
-  const existing = await dbGetConversation(session.student_code);
+  const existing = await dbGetConversation(session.main_id);
 
   if (existing) {
     const { error } = await supabaseAdmin
       .from('conversations')
       .update(dataToSave)
-      .eq('student_code', String(session.student_code).toUpperCase());
+      .eq('main_id', session.main_id);
 
     if (error) throw error;
   } else {
@@ -117,8 +121,8 @@ export async function dbSaveConversation(session) {
   }
 }
 
-export async function incrementCallCount(code) {
-  const student = await dbGetStudent(code);
+export async function incrementCallCount(mainId) {
+  const student = await dbGetStudent(mainId);
 
   if (!student) {
     return { allowed: false, count: 0, limit: 0 };
@@ -136,7 +140,7 @@ export async function incrementCallCount(code) {
   const { error } = await supabaseAdmin
     .from('students')
     .update({ call_count: nextCount })
-    .eq('code', String(code).toUpperCase());
+    .eq('main_id', mainId);
 
   if (error) {
     console.error('호출 횟수 업데이트 오류:', error);
