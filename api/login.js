@@ -1,4 +1,6 @@
 import crypto from 'crypto';
+import { supabaseAdmin } from './_lib/supabase.js';
+import { requireProgramAccess } from './_lib/requireProgramAccess.js';
 import {
   dbGetStudent,
   dbGetConversation,
@@ -11,26 +13,35 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { name, code } = req.body || {};
+    const auth = await requireProgramAccess(req, 'suhaeng');
 
-    if (!name || !code) {
-      return res.status(400).json({ detail: '이름과 코드를 모두 입력해주세요.' });
+    if (!auth.ok) {
+      return res.status(auth.status).json({ detail: auth.message });
     }
 
-    const cleanCode = String(code).trim().toUpperCase();
-    const cleanName = String(name).trim();
+    const mainId = auth.mainId;
+    const fallbackName = auth.user?.user_metadata?.name || auth.user?.email || '';
 
-    const student = await dbGetStudent(cleanCode);
+    let student = await dbGetStudent(mainId);
 
     if (!student) {
-      return res.status(401).json({ detail: '등록되지 않은 코드예요. 선생님께 문의하세요.' });
+      const { data: createdStudent, error: createError } = await supabaseAdmin
+        .from('students')
+        .insert({
+          main_id: mainId,
+          name: fallbackName,
+          call_limit: 0,
+          call_count: 0
+        })
+        .select('*')
+        .single();
+
+      if (createError) throw createError;
+      student = createdStudent;
     }
 
-    if (String(student.name).trim() !== cleanName) {
-      return res.status(401).json({ detail: '이름이 일치하지 않아요. 다시 확인해주세요.' });
-    }
-
-    const prev = await dbGetConversation(cleanCode);
+    const cleanName = student.name || fallbackName;
+    const prev = await dbGetConversation(mainId);
     const sessionId = crypto.randomUUID();
 
     let selectedTopic = '';
@@ -48,7 +59,7 @@ export default async function handler(req, res) {
 
     await createSession({
       session_id: sessionId,
-      student_code: cleanCode,
+      main_id: mainId,
       student_name: cleanName,
       subject: prev?.subject || '',
       grade: prev?.grade || '',
@@ -58,21 +69,23 @@ export default async function handler(req, res) {
       selected_topic_detail: selectedTopicDetail,
       topics: prev?.topics || '',
       resources: prev?.resources || '',
-      evaluation: prev?.evaluation || ''
+      evaluation: prev?.evaluation || '',
+      school_type: prev?.school_type || '일반고'
     });
 
-    let previous = prev ? { ...prev } : null;
-
-    if (previous) {
-      previous.selected_topic = selectedTopic;
-      previous.selected_topic_detail = selectedTopicDetail;
-    }
+    const previous = prev
+      ? {
+          ...prev,
+          selected_topic: selectedTopic,
+          selected_topic_detail: selectedTopicDetail
+        }
+      : null;
 
     return res.status(200).json({
       status: 'success',
       session_id: sessionId,
       name: cleanName,
-      code: cleanCode,
+      main_id: mainId,
       previous,
       call_limit: student.call_limit || 0,
       call_count: student.call_count || 0,
@@ -80,6 +93,9 @@ export default async function handler(req, res) {
     });
   } catch (error) {
     console.error('login error:', error);
-    return res.status(500).json({ detail: '로그인 처리 중 오류가 발생했습니다.' });
+    return res.status(500).json({
+      detail: '로그인 처리 중 오류가 발생했습니다.',
+      error_message: error?.message || String(error)
+    });
   }
 }
