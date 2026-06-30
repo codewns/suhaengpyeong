@@ -15,22 +15,22 @@ export default async function handler(req, res) {
 
   try {
     const {
-  session_id,
-  grade,
-  subject,
-  school_type,
-  desired_career,
-  previous_topic,
-  assessment_info
-} = req.body || {};
+      session_id,
+      grade,
+      subject,
+      school_type,
+      desired_career,
+      previous_topic,
+      assessment_info
+    } = req.body || {};
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
-    const usage = await incrementCallCount(session.student_code);
+    const usage = await incrementCallCount(session.main_id);
 
     if (!usage.allowed) {
       return res.status(429).json({
@@ -40,8 +40,6 @@ export default async function handler(req, res) {
 
     const assessmentText = assessment_info || session.assessment_info || '수행평가 안내문 정보 없음';
     const previousTopic = previous_topic || session.previous_topic || '없음';
-
-  
 
     const dynamicTopicKnowledge = await loadDynamicAssessmentKnowledge({
       grade,
@@ -61,7 +59,6 @@ ${CORE_PRINCIPLES}
 당신은 고등학교 수행평가 주제 추천 전문가입니다.
 이 단계에서는 주제 추천용 데이터만 사용합니다.
 자료 추천용 데이터나 평가용 데이터는 사용하지 않습니다.
-
 
 [홈페이지 위닝 수행 주제 DB]
 ${dynamicTopicKnowledge}
@@ -169,3 +166,4 @@ ${assessmentText}
     return res.status(500).json({ detail: '주제 추천 중 오류가 발생했습니다.' });
   }
 }
+
