@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
@@ -47,3 +47,4 @@ export default async function handler(req, res) {
     });
   }
 }
+
