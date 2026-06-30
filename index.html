@@ -714,19 +714,22 @@
     <div style="text-align:center;margin-bottom:28px;">
       <div style="font-size:40px;margin-bottom:12px;">📚</div>
       <h2 style="font-size:20px;font-weight:900;color:var(--text);">위닝AI 수행평가 서비스</h2>
-      <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">선생님께 받은 코드와 이름을 입력하세요</p>
+      <p style="font-size:13px;color:var(--text-sub);margin-top:6px;">가입한 이메일과 비밀번호로 로그인하세요</p>
     </div>
 
     <div style="display:flex;flex-direction:column;gap:12px;">
       <div>
-        <label style="font-size:12px;font-weight:800;color:var(--text-sub);display:block;margin-bottom:6px;">이름</label>
-        <input id="loginName" class="form-input" placeholder="홍길동" style="width:100%;" onkeydown="if(event.key==='Enter') document.getElementById('loginCode').focus()">
+        <label style="font-size:12px;font-weight:800;color:var(--text-sub);display:block;margin-bottom:6px;">이메일</label>
+        <input id="loginEmail" class="form-input" type="email" placeholder="example@email.com" style="width:100%;" onkeydown="if(event.key==='Enter') document.getElementById('loginPassword').focus()">
       </div>
+
       <div>
-        <label style="font-size:12px;font-weight:800;color:var(--text-sub);display:block;margin-bottom:6px;">학생 코드</label>
-        <input id="loginCode" class="form-input" placeholder="선생님께 받은 코드 입력" style="width:100%;letter-spacing:2px;text-transform:uppercase;" onkeydown="if(event.key==='Enter') doLogin()">
+        <label style="font-size:12px;font-weight:800;color:var(--text-sub);display:block;margin-bottom:6px;">비밀번호</label>
+        <input id="loginPassword" class="form-input" type="password" placeholder="비밀번호 입력" style="width:100%;" onkeydown="if(event.key==='Enter') doLogin()">
       </div>
+
       <div id="loginError" style="font-size:12px;color:#dc2626;display:none;padding:8px 12px;background:#fee2e2;border-radius:8px;"></div>
+
       <button onclick="doLogin()" style="padding:14px;background:var(--primary);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:900;font-family:'Noto Sans KR',sans-serif;cursor:pointer;margin-top:4px;">시작하기 →</button>
     </div>
   </div>
