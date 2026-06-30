@@ -738,10 +738,26 @@
 <script>
 const API = '/api';
 
+/*
+  수행평가 Supabase
+  - 이미지 Storage 업로드용
+*/
 const SUPABASE_URL = 'https://orwngbyiylchpzufwvej.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yd25nYnlpeWxjaHB6dWZ3dmVqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NzkyMzIsImV4cCI6MjA4ODQ1NTIzMn0.LnKlvHTo9Q_teQd-MTNpdVnGcTT27szXcO-GzGxwfmg';
+
+/*
+  메인 Supabase
+  - 이메일/비밀번호 로그인용
+  - service_role 절대 넣지 말 것
+  - 메인 Supabase anon public key만 넣기
+*/
+const WINNING_SUPABASE_URL = 'https://ucjlcvqvinspmrasvsug.supabase.co';
+const WINNING_SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjamxjdnF2aW5zcG1yYXN2c3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NjE3OTUsImV4cCI6MjA5NTUzNzc5NX0.Mz7D_gxS2tBWJuVrYYk4IN9vFG5RnXjNHCHBfi6U2bU';
+
 const STORAGE_BUCKET = 'assessment-images';
+
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const mainSb = supabase.createClient(WINNING_SUPABASE_URL, WINNING_SUPABASE_ANON_KEY);
 
 let sessionId = null;
 let studentName = null;
