@@ -251,27 +251,42 @@ async function doLogin() {
     const token = authData.session.access_token;
 
     const res = await fetch(`${API}/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`
-      },
-      body: JSON.stringify({})
-    });
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${token}`
+  },
+  body: JSON.stringify({})
+});
 
-    const data = await res.json();
+const rawText = await res.text();
 
-    if (!res.ok) {
+let data = {};
+try {
+  data = rawText ? JSON.parse(rawText) : {};
+} catch (e) {
+  console.error('/api/login JSON 파싱 실패:', rawText);
+  data = {};
+}
+
+console.log('/api/login status:', res.status);
+console.log('/api/login response:', data);
+
+if (!res.ok) {
   await mainSb.auth.signOut();
 
-  const message = data.detail || '결제 후 이용해주세요.';
+  const message =
+    data.detail ||
+    data.error ||
+    (res.status === 403 ? '결제 후 이용해주세요.' : '로그인 처리 중 오류가 발생했습니다.');
 
-  if (res.status === 403) {
-    alert(message);
+  alert(message);
+
+  if (errEl) {
+    errEl.textContent = message;
+    errEl.style.display = 'block';
   }
 
-  errEl.textContent = message;
-  errEl.style.display = 'block';
   btn.textContent = '시작하기 →';
   btn.disabled = false;
   return;
@@ -301,11 +316,20 @@ async function doLogin() {
       showWelcome(studentName);
     }
   } catch (e) {
-    errEl.textContent = e.message || '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+  console.error('doLogin error:', e);
+
+  const message = e.message || '서버 연결 실패. 잠시 후 다시 시도해주세요.';
+
+  alert(message);
+
+  if (errEl) {
+    errEl.textContent = message;
     errEl.style.display = 'block';
-    btn.textContent = '시작하기 →';
-    btn.disabled = false;
   }
+
+  btn.textContent = '시작하기 →';
+  btn.disabled = false;
+}
 }
 
 function showPreviousHistory(prev) {
