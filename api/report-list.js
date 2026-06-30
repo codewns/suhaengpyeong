@@ -15,11 +15,11 @@ export default async function handler(req, res) {
 
     const session = await getSession(session_id);
 
-    if (!session?.student_code) {
+    if (!session?.main_id) {
       return res.status(401).json({ detail: '로그인이 필요합니다.' });
     }
 
-    const reports = await listAssessmentReports(session.student_code, 50);
+    const reports = await listAssessmentReports(session.main_id, 50);
 
     return res.status(200).json({ status: 'success', reports });
   } catch (error) {
@@ -27,3 +27,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ detail: '리포트 목록을 불러오는 중 오류가 발생했습니다.' });
   }
 }
+
